@@ -1,6 +1,12 @@
 # Static configuration for non-Docker services
 # This file is watched by Traefik and will automatically reload when changed
 
+experimental:
+  plugins:
+    geoblock:
+      moduleName: "github.com/PascalMinder/geoblock"
+      version: "v0.2.5"
+
 http:
   middlewares:
     rate-limit:
