@@ -1,6 +1,3 @@
-# Static configuration for non-Docker services
-# This file is watched by Traefik and will automatically reload when changed
-
 http:
   middlewares:
     rate-limit:
