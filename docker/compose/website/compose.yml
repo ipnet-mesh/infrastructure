@@ -8,8 +8,6 @@ services:
     environment:
       - FLASK_ENV=production
       - FLASK_DEBUG=false
-    volumes:
-      - ./assets/data:/app/assets/data:ro
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.website.rule=Host(`beta.ipnt.uk`)"
