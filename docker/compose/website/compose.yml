@@ -11,6 +11,22 @@ services:
       - FLASK_DEBUG=false
     labels:
       - "traefik.enable=true"
+      - "traefik.http.routers.website.rule=Host(`alpha.${IPNET_DOMAIN}`)"
+      - "traefik.http.routers.website.entrypoints=websecure"
+      - "traefik.http.routers.website.tls.certresolver=cloudflare"
+      - "traefik.http.services.website.loadbalancer.server.port=5000"
+
+  website_beta:
+    image: ghcr.io/ipnet-mesh/website:main
+    container_name: website_beta
+    restart: unless-stopped
+    networks:
+      - proxy
+    environment:
+      - FLASK_ENV=production
+      - FLASK_DEBUG=false
+    labels:
+      - "traefik.enable=true"
       - "traefik.http.routers.website.rule=Host(`beta.${IPNET_DOMAIN}`)"
       - "traefik.http.routers.website.entrypoints=websecure"
       - "traefik.http.routers.website.tls.certresolver=cloudflare"
