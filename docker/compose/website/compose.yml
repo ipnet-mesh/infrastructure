@@ -1,7 +1,8 @@
 services:
 
   website:
-    image: ghcr.io/ipnet-mesh/website:main
+    image: ghcr.io/ipnet-mesh/website:latest
+    container_name: website
     restart: unless-stopped
     networks:
       - proxy
