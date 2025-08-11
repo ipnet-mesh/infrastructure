@@ -11,6 +11,11 @@ http:
         sourceCriterion:
           ipStrategy:
             depth: 1
+    geoblock:
+      plugin:
+        geoblock:
+          blockedCountries:
+            - "RU"
 
 # Example configuration - uncomment and modify as needed
 # http:
