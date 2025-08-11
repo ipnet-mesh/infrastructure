@@ -1,6 +1,17 @@
 # Static configuration for non-Docker services
 # This file is watched by Traefik and will automatically reload when changed
 
+http:
+  middlewares:
+    rate-limit:
+      rateLimit:
+        burst: 10
+        period: 1m
+        average: 100
+        sourceCriterion:
+          ipStrategy:
+            depth: 1
+
 # Example configuration - uncomment and modify as needed
 # http:
 #   routers:
