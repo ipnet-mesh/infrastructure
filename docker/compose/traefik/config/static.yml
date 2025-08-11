@@ -1,0 +1,49 @@
+# Static configuration for non-Docker services
+# This file is watched by Traefik and will automatically reload when changed
+
+# Example configuration - uncomment and modify as needed
+# http:
+#   routers:
+#     static-service:
+#       rule: "Host(`service.ipnt.uk`)"
+#       entryPoints:
+#         - websecure
+#       tls:
+#         certResolver: cloudflare
+#       service: static-service
+#
+#     api-service:
+#       rule: "Host(`api.ipnt.uk`)"
+#       entryPoints:
+#         - websecure
+#       tls:
+#         certResolver: cloudflare
+#       service: api-service
+#
+#   services:
+#     static-service:
+#       loadBalancer:
+#         servers:
+#           - url: "http://192.168.1.100:3000"
+#
+#     api-service:
+#       loadBalancer:
+#         servers:
+#           - url: "http://192.168.1.101:8080"
+#
+#   middlewares:
+#     auth:
+#       basicAuth:
+#         users:
+#           - "admin:$2y$12$..."  # Use htpasswd to generate
+#
+#     secure-headers:
+#       headers:
+#         accessControlAllowMethods:
+#           - GET
+#           - OPTIONS
+#           - PUT
+#         accessControlAllowOriginList:
+#           - "https://ipnt.uk"
+#         accessControlMaxAge: 100
+#         addVaryHeader: true

@@ -1,0 +1,10 @@
+# Mosquitto password file
+# Generate passwords using: mosquitto_passwd -c passwd username
+# or add users with: mosquitto_passwd passwd username
+
+# Admin user (change password after deployment)
+# admin:$7$101$password$hash
+
+# Add your users here using mosquitto_passwd command
+# mosquitto_passwd -c /path/to/passwd admin
+# mosquitto_passwd /path/to/passwd mesh-node-1

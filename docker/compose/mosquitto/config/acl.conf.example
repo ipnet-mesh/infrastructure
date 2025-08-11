@@ -1,0 +1,15 @@
+# Mosquitto ACL Configuration for IPNet Mesh Network
+# Access Control Lists define what users can publish/subscribe to
+
+# Default permissions for all users
+# Deny access to system topics by default
+pattern read $SYS/broker/connection/%c/state
+pattern read $SYS/broker/log/%c
+pattern read $SYS/broker/clients/%c
+
+# Allow users to read their own connection state
+pattern read $SYS/broker/connection/%c/state
+
+# Allow user 'mqtt' to read and write any topic
+user mqtt
+topic readwrite #

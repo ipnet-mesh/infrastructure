@@ -1,0 +1,22 @@
+services:
+
+  website:
+    image: ghcr.io/ipnet-mesh/website:main
+    restart: unless-stopped
+    networks:
+      - proxy
+    environment:
+      - FLASK_ENV=production
+      - FLASK_DEBUG=false
+    volumes:
+      - ./assets/data:/app/assets/data:ro
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.website.rule=Host(`beta.ipnt.uk`)"
+      - "traefik.http.routers.website.entrypoints=websecure"
+      - "traefik.http.routers.website.tls.certresolver=cloudflare"
+      - "traefik.http.services.website.loadbalancer.server.port=5000"
+
+networks:
+  proxy:
+    external: true

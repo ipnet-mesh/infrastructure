@@ -1,0 +1,32 @@
+services:
+
+  mosquitto:
+    image: eclipse-mosquitto:2.0
+    restart: unless-stopped
+    networks:
+      - proxy
+    volumes:
+      - ./config/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
+      - ./config/acl.conf:/mosquitto/config/acl.conf:ro
+      - ./config/passwd:/mosquitto/config/passwd:ro
+      - mosquitto_data:/mosquitto/data
+    labels:
+      - "traefik.enable=true"
+      # MQTT over TLS (8883) - Traefik terminates TLS and forwards to plain MQTT
+      - "traefik.tcp.routers.mqtt-tls.rule=HostSNI(`mqtt.ipnt.uk`)"
+      - "traefik.tcp.routers.mqtt-tls.entrypoints=mqtt"
+      - "traefik.tcp.routers.mqtt-tls.tls.certresolver=cloudflare"
+      - "traefik.tcp.routers.mqtt-tls.service=mqtt-tls"
+      - "traefik.tcp.services.mqtt-tls.loadbalancer.server.port=1883"
+      # MQTT WebSockets (WSS)
+      - "traefik.http.routers.mqtt-ws.rule=Host(`mqtt.ipnt.uk`) && Path(`/mqtt`)"
+      - "traefik.http.routers.mqtt-ws.entrypoints=websecure"
+      - "traefik.http.routers.mqtt-ws.tls.certresolver=cloudflare"
+      - "traefik.http.services.mqtt-ws.loadbalancer.server.port=8080"
+
+networks:
+  proxy:
+    external: true
+
+volumes:
+  mosquitto_data:
