@@ -27,10 +27,10 @@ services:
       - FLASK_DEBUG=false
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.website.rule=Host(`beta.${IPNET_DOMAIN}`)"
-      - "traefik.http.routers.website.entrypoints=websecure"
-      - "traefik.http.routers.website.tls.certresolver=cloudflare"
-      - "traefik.http.services.website.loadbalancer.server.port=5000"
+      - "traefik.http.routers.website_beta.rule=Host(`beta.${IPNET_DOMAIN}`)"
+      - "traefik.http.routers.website_beta.entrypoints=websecure"
+      - "traefik.http.routers.website_beta.tls.certresolver=cloudflare"
+      - "traefik.http.services.website_beta.loadbalancer.server.port=5000"
 
 networks:
   proxy:
