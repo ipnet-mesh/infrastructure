@@ -15,7 +15,7 @@ services:
       - CF_DNS_API_TOKEN=${CF_DNS_API_TOKEN}
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
-      - ./traefik_static.yml:/etc/traefik/static/sites.yml:ro
+      - ./config/static.yml:/etc/traefik/static/sites.yml:ro
       - acme:/acme
     command:
       - --api.dashboard=true
