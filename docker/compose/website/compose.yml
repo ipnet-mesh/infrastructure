@@ -11,12 +11,10 @@ services:
       - FLASK_DEBUG=false
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.website.rule=Host(`${IPNET_DOMAIN}`) || HostRegexp(`{subdomain:[a-z0-9]+}.${IPNET_DOMAIN}`)
-      - "traefik.http.routers.website.priority=50"
+      - "traefik.http.routers.website.rule=Host(`${IPNET_DOMAIN}`) || HostRegexp(`^(.*\\.)?ipnt\\.uk$`)"
       - "traefik.http.routers.website.entrypoints=websecure"
       - "traefik.http.routers.website.tls.certresolver=cloudflare"
       - "traefik.http.services.website.loadbalancer.server.port=5000"
-  
 
   website_beta:
     image: ghcr.io/ipnet-mesh/website:main
