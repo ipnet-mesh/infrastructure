@@ -5,7 +5,7 @@ Wants=ipnet-website-update.timer
 [Service]
 Type=oneshot
 User=root
-WorkingDirectory=/home/apps/ipnet/website
+WorkingDirectory=/home/apps/ipnet/infrastructure/docker/compose/website
 ExecStart=/bin/bash -c 'docker compose pull && docker compose up -d'
 
 [Install]
