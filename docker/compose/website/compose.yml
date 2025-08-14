@@ -11,7 +11,7 @@ services:
       - FLASK_DEBUG=false
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.website.rule=Host(`${IPNET_DOMAIN}`) || HostRegexp(`.+`)"
+      - "traefik.http.routers.website.rule=Host(`${IPNET_DOMAIN}`) || HostRegexp(`(.+).${IPNET_DOMAIN}`)"
       - "traefik.http.routers.website.entrypoints=websecure"
       - "traefik.http.routers.website.tls.certresolver=cloudflare"
       - "traefik.http.services.website.loadbalancer.server.port=5000"
@@ -28,7 +28,7 @@ services:
       - BUILD_MODE=beta
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.website_beta.rule=Host(`beta.${IPNET_DOMAIN}`)"
+      - "traefik.http.routers.website_beta.rule=Host(`beta.${IPNET_DOMAIN}`) || HostRegexp(`(.*).beta.${IPNET_DOMAIN}`)"
       - "traefik.http.routers.website_beta.priority=100"
       - "traefik.http.routers.website_beta.entrypoints=websecure"
       - "traefik.http.routers.website_beta.tls.certresolver=cloudflare"
