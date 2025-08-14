@@ -5,8 +5,8 @@ Wants=ipnet-website-update.timer
 [Service]
 Type=oneshot
 User=root
-WorkingDirectory=/home/apps/ipnet/infrastructure/docker/compose/website
-ExecStart=/bin/bash -c 'docker compose pull && docker compose up -d'
+WorkingDirectory=/home/apps/ipnet/infrastructure
+ExecStart=/bin/bash -c 'source ./.env && pushd ./docker/compose/website && docker compose pull && docker compose up -d && popd'
 
 [Install]
 WantedBy=multi-user.target
