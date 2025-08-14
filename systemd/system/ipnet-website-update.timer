@@ -1,0 +1,10 @@
+[Unit]
+Description=Update IPNet website containers periodically
+Requires=ipnet-website-update.service
+
+[Timer]
+OnCalendar=hourly
+Persistent=true
+
+[Install]
+WantedBy=timers.target

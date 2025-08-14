@@ -1,0 +1,12 @@
+[Unit]
+Description=Update IPNet website containers
+Wants=ipnet-website-update.timer
+
+[Service]
+Type=oneshot
+User=root
+WorkingDirectory=/home/apps/ipnet/website
+ExecStart=/bin/bash -c 'docker compose pull && docker compose up -d'
+
+[Install]
+WantedBy=multi-user.target
