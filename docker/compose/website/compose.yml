@@ -25,6 +25,7 @@ services:
     environment:
       - FLASK_ENV=production
       - FLASK_DEBUG=false
+      - BUILD_MODE=beta
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.website_beta.rule=Host(`beta.${IPNET_DOMAIN}`)"
