@@ -11,7 +11,7 @@ services:
       - FLASK_DEBUG=false
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.website.rule=Host(`${IPNET_DOMAIN}`) || Host(`www.${IPNET_DOMAIN}`)"
+      - "traefik.http.routers.website.rule=Host(`${IPNET_DOMAIN}`) || Host(`*.${IPNET_DOMAIN}`)"
       - "traefik.http.routers.website.entrypoints=websecure"
       - "traefik.http.routers.website.tls.certresolver=cloudflare"
       - "traefik.http.services.website.loadbalancer.server.port=5000"
