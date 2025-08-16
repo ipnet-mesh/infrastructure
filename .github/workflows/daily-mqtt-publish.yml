@@ -30,7 +30,7 @@ jobs:
         MQTT_PASSWORD: ${{ secrets.MQTT_PASSWORD }}
       run: |
         # Set default values for scheduled runs
-        TOPIC_SUFFIX="device_query"
+        TOPIC_SUFFIX="command/device_query"
         MESSAGE="{}"
         
         # Construct full topic
