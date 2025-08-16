@@ -26,7 +26,7 @@ jobs:
       run: |
         # Set default values for scheduled runs
         TOPIC_SUFFIX="command/send_chan_msg"
-        MESSAGE='{"channel": ${MESHCORE_CHANNEL_IDX}, "message": "${MESSAGE_PREFIX}: Daily MQTT Publish Test"}'
+        MESSAGE="{\"channel\": ${MESHCORE_CHANNEL_IDX}, \"message\": \"${MESSAGE_PREFIX}: Daily MQTT Publish Test\"}"
 
         # Construct full topic
         FULL_TOPIC="${MQTT_TOPIC_PREFIX}/${TOPIC_SUFFIX}"
