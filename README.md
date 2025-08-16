@@ -1,5 +1,7 @@
 # IPNet Mesh Infrastructure
 
+[![MQTT Post: Daily](https://github.com/ipnet-mesh/infrastructure/actions/workflows/daily-mqtt-publish.yml/badge.svg)](https://github.com/ipnet-mesh/infrastructure/actions/workflows/daily-mqtt-publish.yml)
+
 Docker Compose-based infrastructure for the IPNet Mesh network, providing reverse proxy, MQTT messaging, and web services.
 
 ## Overview

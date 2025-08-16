@@ -3,13 +3,13 @@ name: "MQTT Post: Daily"
 on:
   schedule:
     - cron: '0 9 * * *'  # Runs daily at 9:00 AM UTC
-  workflow_dispatch:  # Allows manual triggering of the workflow
+  workflow_dispatch:
 jobs:
   MQTTPublish:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Cache apt packages
+    - name: Cache Apt packages
       uses: actions/cache@v4
       with:
         path: /var/cache/apt/archives
