@@ -5,19 +5,14 @@ on:
     - cron: '0 9 * * *'  # Runs daily at 9:00 AM UTC
   workflow_dispatch:
     inputs:
-      topic_suffix:
-        description: 'MQTT topic suffix (e.g., send_msg)'
-        required: true
-        default: 'send_msg'
-        type: string
       message:
-        description: 'JSON message payload'
-        required: true
-        default: '{"timestamp": "2024-01-01T00:00:00Z", "source": "github-actions"}'
+        description: 'Message to publish'
+        required: false
+        default: ''
         type: string
 
 jobs:
-  mqtt-publish:
+  MQTTPublish:
     runs-on: ubuntu-latest
     
     steps:
@@ -35,8 +30,8 @@ jobs:
         MQTT_PASSWORD: ${{ secrets.MQTT_PASSWORD }}
       run: |
         # Set default values for scheduled runs
-        TOPIC_SUFFIX="${{ github.event.inputs.topic_suffix || 'send_msg' }}"
-        MESSAGE="${{ github.event.inputs.message || '{}' }}"
+        TOPIC_SUFFIX="device_query"
+        MESSAGE="{}"
         
         # Construct full topic
         FULL_TOPIC="${MQTT_TOPIC_PREFIX}/${TOPIC_SUFFIX}"
@@ -46,13 +41,12 @@ jobs:
         
         # Publish message using mosquitto_pub
         mosquitto_pub \
-          -h "$MQTT_HOST" \
-          -p "$MQTT_PORT" \
-          -u "$MQTT_USERNAME" \
-          -P "$MQTT_PASSWORD" \
-          -t "$FULL_TOPIC" \
-          -m "$MESSAGE" \
-          --capath /etc/ssl/certs \
+          -h "${MQTT_HOST}" \
+          -p "${MQTT_PORT}" \
+          -u "${MQTT_USERNAME}" \
+          -P "${MQTT_PASSWORD}" \
+          -t "${FULL_TOPIC}" \
+          -m "${MESSAGE}" \
           -q 1
         
         echo "Message published successfully"
