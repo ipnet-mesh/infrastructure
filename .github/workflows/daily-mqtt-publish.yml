@@ -36,7 +36,7 @@ jobs:
       run: |
         # Set default values for scheduled runs
         TOPIC_SUFFIX="${{ github.event.inputs.topic_suffix || 'send_msg' }}"
-        MESSAGE="${{ github.event.inputs.message || '{\"timestamp\": \"'$(date -Iseconds)'\", \"source\": \"github-actions\", \"type\": \"daily-heartbeat\"}' }}"
+        MESSAGE="${{ github.event.inputs.message || '{}' }}"
         
         # Construct full topic
         FULL_TOPIC="${MQTT_TOPIC_PREFIX}/${TOPIC_SUFFIX}"

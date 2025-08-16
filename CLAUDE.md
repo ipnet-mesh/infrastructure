@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 This is the infrastructure repository for IPNet Mesh - a Docker Compose-based infrastructure setup that provides:
 - Traefik reverse proxy with automatic HTTPS via Cloudflare DNS challenges
-- Eclipse Mosquitto MQTT broker with WebSocket support  
+- Eclipse Mosquitto MQTT broker with WebSocket support
 - Website deployment using container images from ghcr.io/ipnet-mesh/website
 
 ## Architecture
@@ -17,12 +17,12 @@ The infrastructure is organized into separate Docker Compose services in `docker
   - Handles SSL termination using Cloudflare DNS challenge
   - Routes traffic to services based on Host rules
   - Exposes ports 80, 443 (HTTP/HTTPS), and 8883 (MQTT over TLS)
-  
+
 - **Mosquitto** (`docker/compose/mosquitto/`): MQTT message broker
   - Configured for authentication (no anonymous access)
   - Supports both native MQTT (port 1883, internal) and WebSocket (port 8080)
   - Uses ACL for topic-based access control
-  
+
 - **Website** (`docker/compose/website/`): Flask-based web application
   - Deployed from pre-built container images
   - Serves content at `beta.ipnt.uk`
@@ -36,7 +36,7 @@ All services use an external `proxy` network to communicate through Traefik.
 Start all services:
 ```bash
 cd docker/compose/traefik && docker compose up -d
-cd docker/compose/mosquitto && docker compose up -d  
+cd docker/compose/mosquitto && docker compose up -d
 cd docker/compose/website && docker compose up -d
 ```
 
@@ -75,7 +75,7 @@ Traefik requires these environment variables:
 
 - **Mosquitto config**: `docker/compose/mosquitto/config/mosquitto.conf`
 - **Mosquitto ACL**: `docker/compose/mosquitto/config/acl.conf` (copy from .example)
-- **Mosquitto passwords**: `docker/compose/mosquitto/config/passwd` (copy from .example) 
+- **Mosquitto passwords**: `docker/compose/mosquitto/config/passwd` (copy from .example)
 - **Traefik static routes**: `docker/compose/traefik/config/static.yml` (for non-Docker services)
 
 ## Domain Configuration
