@@ -1,0 +1,9 @@
+connection ably-bridge
+address mqtt.ably.io:8883
+bridge_protocol_version mqttv311
+cleansession true
+clientid meshcore-bridge
+username your-api-key-here
+password 
+
+topic meshcore/# out 0 "" ""
