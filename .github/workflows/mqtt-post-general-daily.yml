@@ -50,7 +50,6 @@ jobs:
           -u "${MQTT_USERNAME}" \
           -P "${MQTT_PASSWORD}" \
           -t "${FULL_TOPIC}" \
-          -m "${MESSAGE}" \
-          -q 1
+          -m "${MESSAGE}"
 
         echo "Message published successfully"
