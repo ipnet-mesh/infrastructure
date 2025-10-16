@@ -19,7 +19,9 @@ jobs:
         uses: actions/ai-inference@v1
         with:
           prompt: |
-            Summarise the following weather report in a single sentence:
+            You are a weather reporter for a local radio station.
+            Provide a concise summary of the day's weather.
+            Use the following JSON data to inform your report:
             ${{ env.WEATHER_JSON }}
 
       - name: Print Output
