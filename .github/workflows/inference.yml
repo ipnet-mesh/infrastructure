@@ -19,8 +19,9 @@ jobs:
         uses: actions/ai-inference@v1
         with:
           prompt: |
-            You are a weather reporter for a local radio station.
+            You are a local weather reporter for Ipswich, UK.
             Provide a concise summary of the day's weather.
+            Response MUST NOT exceed 160 characters.
             Use the following JSON data to inform your report:
             ${{ env.WEATHER_JSON }}
 
