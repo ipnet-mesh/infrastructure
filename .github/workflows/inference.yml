@@ -12,7 +12,7 @@ jobs:
         id: weather
         run: |
           json=$(curl "https://api.open-meteo.com/v1/forecast?latitude=${{ vars.WEATHER_LATITUDE }}&longitude=${{ vars.WEATHER_LONGITUDE }}&forecast_days=${{ vars.WEATHER_FORECAST_DAYS }}&current=temperature_2m")
-          echo "WEATHER_JSON=${json}" >> $GITHUB_ENV
+          echo "WEATHER_JSON=${json}" >> ${GITHUB_ENV}
 
       - name: Test Local Action
         id: inference
@@ -20,7 +20,7 @@ jobs:
         with:
           prompt: |
             Summarise the following weather report in a single sentence:
-            ${WEATHER_JSON}
+            ${{ env.WEATHER_JSON }}
 
       - name: Print Output
         id: output
