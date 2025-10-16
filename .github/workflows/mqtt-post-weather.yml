@@ -1,8 +1,8 @@
-name: "MQTT Post: Daily"
+name: "MQTT Post: Daily Briefing"
 
 on:
   schedule:
-    - cron: '0 9 * * *'  # Runs daily at 9:00 AM UTC
+    - cron: '0 8 * * *'  # Runs daily at 8:00 AM UTC
   workflow_dispatch:
 jobs:
   MQTTPublish:
@@ -23,6 +23,24 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y mosquitto-clients
 
+    - name: Get Weather
+      id: weather
+      run: |
+        json=$(curl "https://api.open-meteo.com/v1/forecast?latitude=${{ vars.WEATHER_LATITUDE }}&longitude=${{ vars.WEATHER_LONGITUDE }}&forecast_days=${{ vars.WEATHER_FORECAST_DAYS }}&hourly=temperature_2m,precipitation_probability,wind_speed_10m")
+        echo "WEATHER_JSON=${json}" >> ${GITHUB_ENV}
+
+    - name: AI Inference
+      id: inference
+      uses: actions/ai-inference@v1
+      with:
+        prompt: |
+          You are a local weather reporter for Ipswich, UK.
+          Provide a concise summary of the day's weather.
+          Wind speed in mph, temperature in °C, and precipitation probability in %.
+          Response MUST NOT exceed 160 characters.
+          Use the following JSON data to inform your report:
+          ${{ env.WEATHER_JSON }}
+
     - name: Publish MQTT message
       env:
         MQTT_HOST: ${{ vars.MQTT_HOST }}
@@ -35,7 +53,7 @@ jobs:
       run: |
         # Set default values for scheduled runs
         TOPIC_SUFFIX="command/send_chan_msg"
-        MESSAGE="{\"channel\": ${MESHCORE_CHANNEL_IDX}, \"message\": \"${MESSAGE_PREFIX}: Daily MQTT Publish Test\"}"
+        MESSAGE="{\"channel\": ${MESHCORE_CHANNEL_IDX}, \"message\": \"${MESSAGE_PREFIX}: ${{ steps.inference.outputs.response }}\"}"
 
         # Construct full topic
         FULL_TOPIC="${MQTT_TOPIC_PREFIX}/${TOPIC_SUFFIX}"
