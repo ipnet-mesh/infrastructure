@@ -11,7 +11,7 @@ jobs:
       - name: Weather
         id: weather
         run: |
-          json=$(curl https://api.open-meteo.com/v1/forecast?latitude=${{ vars.WEATHER_LATITUDE }}&longitude=${{ vars.WEATHER_LONGITUDE }}&forecast_days=${{ vars.WEATHER_FORECAST_DAYS }}&current=temperature_2m)
+          json='$(curl "https://api.open-meteo.com/v1/forecast?latitude=${{ vars.WEATHER_LATITUDE }}&longitude=${{ vars.WEATHER_LONGITUDE }}&forecast_days=${{ vars.WEATHER_FORECAST_DAYS }}&current=temperature_2m")'
           echo "WEATHER_JSON=$json" >> $GITHUB_ENV
 
       - name: Test Local Action
