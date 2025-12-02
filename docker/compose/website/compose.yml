@@ -5,35 +5,39 @@ services:
     container_name: website
     restart: unless-stopped
     networks:
-      - proxy
+      - pangolin
     environment:
       - FLASK_ENV=production
       - FLASK_DEBUG=false
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.website.rule=Host(`${IPNET_DOMAIN}`) || HostRegexp(`(.+).${IPNET_DOMAIN}`)"
-      - "traefik.http.routers.website.entrypoints=websecure"
-      - "traefik.http.routers.website.tls.certresolver=cloudflare"
-      - "traefik.http.services.website.loadbalancer.server.port=5000"
+    ports:
+      - "127.0.0.1:5000:5000"
 
   website_beta:
     image: ghcr.io/ipnet-mesh/website:main
-    container_name: website_beta
+    container_name: website-beta
     restart: unless-stopped
     networks:
-      - proxy
+      - pangolin
     environment:
       - FLASK_ENV=production
       - FLASK_DEBUG=false
       - BUILD_MODE=beta
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.website_beta.rule=Host(`beta.${IPNET_DOMAIN}`) || HostRegexp(`(.*).beta.${IPNET_DOMAIN}`)"
-      - "traefik.http.routers.website_beta.priority=100"
-      - "traefik.http.routers.website_beta.entrypoints=websecure"
-      - "traefik.http.routers.website_beta.tls.certresolver=cloudflare"
-      - "traefik.http.services.website_beta.loadbalancer.server.port=5000"
+    ports:
+      - "127.0.0.1:5001:5000"
+
+  website_alpha:
+    image: ghcr.io/ipnet-mesh/website:feature-alpha
+    container_name: website-alpha
+    restart: unless-stopped
+    networks:
+      - pangolin
+    environment:
+      - FLASK_ENV=production
+      - FLASK_DEBUG=false
+      - BUILD_MODE=alpha
+    ports:
+      - "127.0.0.1:5002:5000"
 
 networks:
-  proxy:
+  pangolin:
     external: true

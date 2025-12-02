@@ -12,22 +12,9 @@ services:
       - ./config/passwd:/mosquitto/config/passwd:ro
       - ./config/bridges:/mosquitto/config/bridges:ro
       - mosquitto_data:/mosquitto/data
-    labels:
-      - "traefik.enable=true"
-      # MQTT over TLS (8883) - Traefik terminates TLS and forwards to plain MQTT
-      - "traefik.tcp.routers.mqtt-tls.rule=HostSNI(`mqtt.${IPNET_DOMAIN}`)"
-      - "traefik.tcp.routers.mqtt-tls.entrypoints=mqtt"
-      - "traefik.tcp.routers.mqtt-tls.tls.certresolver=cloudflare"
-      - "traefik.tcp.routers.mqtt-tls.service=mqtt-tls"
-      - "traefik.tcp.services.mqtt-tls.loadbalancer.server.port=1883"
-      # MQTT WebSockets (WSS)
-      - "traefik.http.routers.mqtt-ws.rule=Host(`mqtt.${IPNET_DOMAIN}`) && Path(`/mqtt`)"
-      - "traefik.http.routers.mqtt-ws.entrypoints=websecure"
-      - "traefik.http.routers.mqtt-ws.tls.certresolver=cloudflare"
-      - "traefik.http.services.mqtt-ws.loadbalancer.server.port=8080"
 
 networks:
-  proxy:
+  pangolin:
     external: true
 
 volumes:
