@@ -39,6 +39,8 @@ services:
       - FLASK_ENV=production
       - FLASK_DEBUG=false
       - BUILD_MODE=alpha
+      - API_URL=https://api.ipnt.uk
+      - API_KEY=secret-meshcore-api-token
     volumes:
       - instance_alpha:/app/instance
     ports:
