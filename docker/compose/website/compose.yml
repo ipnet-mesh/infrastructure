@@ -9,6 +9,8 @@ services:
     environment:
       - FLASK_ENV=production
       - FLASK_DEBUG=false
+    volumes:
+      - instance:/app/instance
     ports:
       - "127.0.0.1:5000:5000"
 
@@ -22,6 +24,8 @@ services:
       - FLASK_ENV=production
       - FLASK_DEBUG=false
       - BUILD_MODE=beta
+    volumes:
+      - instance_beta:/app/instance
     ports:
       - "127.0.0.1:5001:5000"
 
@@ -35,8 +39,18 @@ services:
       - FLASK_ENV=production
       - FLASK_DEBUG=false
       - BUILD_MODE=alpha
+    volumes:
+      - instance_alpha:/app/instance
     ports:
       - "127.0.0.1:5002:5000"
+
+volumes:
+  instance:
+    driver: local
+  instance_beta:
+    driver: local
+  instance_alpha:
+    driver: local
 
 networks:
   pangolin:
