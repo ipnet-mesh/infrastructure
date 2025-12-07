@@ -13,8 +13,8 @@ services:
       - "443:443"
       - "8883:8883"  # MQTT over TLS
     environment:
-      - CF_API_EMAIL=${CF_API_EMAIL}
-      - CF_DNS_API_TOKEN=${CF_DNS_API_TOKEN}
+      - CF_API_EMAIL=${DNS_API_EMAIL}
+      - CF_DNS_API_TOKEN=${DNS_API_TOKEN}
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - ./config/traefik/config.yml:/etc/traefik/static/config.yml:ro
@@ -29,10 +29,10 @@ services:
       - --entrypoints.web.address=:80
       - --entrypoints.websecure.address=:443
       - --entrypoints.mqtt.address=:8883
-      # - --certificatesresolvers.cloudflare.acme.dnschallenge=true
-      # - --certificatesresolvers.cloudflare.acme.dnschallenge.provider=cloudflare
-      # - --certificatesresolvers.cloudflare.acme.email=${ACME_EMAIL}
-      # - --certificatesresolvers.cloudflare.acme.storage=/acme/acme.json
+      # - --certificatesresolvers.default.acme.dnschallenge=true
+      # - --certificatesresolvers.default.acme.dnschallenge.provider=${DNS_PROVIDER}
+      # - --certificatesresolvers.default.acme.email=${ACME_EMAIL}
+      # - --certificatesresolvers.default.acme.storage=/acme/acme.json
       # - --entrypoints.web.http.redirections.entrypoint.to=websecure
       # - --entrypoints.web.http.redirections.entrypoint.scheme=https
       - --log.level=INFO
@@ -45,7 +45,7 @@ services:
   # === Hub ===
 
   hub-collector:
-    image: ghcr.io/ipnet-mesh/meshcore-hub:latest
+    image: ghcr.io/ipnet-mesh/meshcore-hub:${HUB_IMAGE_VERSION:-latest}
     container_name: hub-collector
     restart: unless-stopped
     networks:
@@ -54,7 +54,7 @@ services:
       - ${HUB_DATA_HOME}:/data
       - ${HUB_SEED_HOME}:/seed
     environment:
-      - LOG_LEVEL=INFO
+      - LOG_LEVEL=${HUB_LOG_LEVEL:-INFO}
       - MQTT_HOST=mosquitto
       - MQTT_PORT=1883
       - MQTT_USERNAME=${MQTT_USERNAME:-}
@@ -71,7 +71,7 @@ services:
       start_period: 10s
   
   hub-api:
-    image: ghcr.io/ipnet-mesh/meshcore-hub:latest
+    image: ghcr.io/ipnet-mesh/meshcore-hub:${HUB_IMAGE_VERSION:-latest}
     container_name: hub-api
     restart: unless-stopped
     networks:
@@ -82,17 +82,17 @@ services:
     volumes:
       - ${HUB_DATA_HOME}:/data
     environment:
-      - LOG_LEVEL=INFO
+      - LOG_LEVEL=${HUB_LOG_LEVEL:-INFO}
       - MQTT_HOST=mosquitto
       - MQTT_PORT=1883
       - MQTT_USERNAME=${MQTT_USERNAME:-}
       - MQTT_PASSWORD=${MQTT_PASSWORD:-}
-      - MQTT_PREFIX=meshcore
+      - MQTT_PREFIX=${MQTT_PREFIX:-meshcore}
       - DATA_HOME=/data
       - API_HOST=0.0.0.0
       - API_PORT=8000
-      - API_READ_KEY=${API_READ_KEY:-}
-      - API_ADMIN_KEY=${API_ADMIN_KEY:-}
+      - API_READ_KEY=${HUB_API_READ_KEY:-}
+      - API_ADMIN_KEY=${HUB_API_ADMIN_KEY:-}
     command: ["api"]
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
@@ -102,7 +102,7 @@ services:
       start_period: 10s
 
   hub-web:
-    image: ghcr.io/ipnet-mesh/meshcore-hub:latest
+    image: ghcr.io/ipnet-mesh/meshcore-hub:${HUB_IMAGE_VERSION:-latest}
     container_name: hub-web
     restart: unless-stopped
     networks:
@@ -111,19 +111,19 @@ services:
       hub-api:
         condition: service_healthy
     environment:
-      - LOG_LEVEL=INFO
+      - LOG_LEVEL=${HUB_LOG_LEVEL:-INFO}
       - API_BASE_URL=http://hub-api:8000
-      - API_KEY=${API_READ_KEY:-}
+      - API_KEY=${HUB_API_READ_KEY:-}
       - WEB_HOST=0.0.0.0
       - WEB_PORT=8080
-      - NETWORK_NAME=${NETWORK_NAME:-MeshCore Network}
-      - NETWORK_CITY=${NETWORK_CITY:-}
-      - NETWORK_COUNTRY=${NETWORK_COUNTRY:-}
-      - NETWORK_RADIO_CONFIG=${NETWORK_RADIO_CONFIG:-}
-      - NETWORK_CONTACT_EMAIL=${NETWORK_CONTACT_EMAIL:-}
-      - NETWORK_CONTACT_DISCORD=${NETWORK_CONTACT_DISCORD:-}
-      - NETWORK_CONTACT_GITHUB=${NETWORK_CONTACT_GITHUB:-}
-      - NETWORK_WELCOME_TEXT=${NETWORK_WELCOME_TEXT:-}
+      - NETWORK_NAME=${HUB_NETWORK_NAME:-MeshCore Network}
+      - NETWORK_CITY=${HUB_NETWORK_CITY:-}
+      - NETWORK_COUNTRY=${HUB_NETWORK_COUNTRY:-}
+      - NETWORK_RADIO_CONFIG=${HUB_NETWORK_RADIO_CONFIG:-}
+      - NETWORK_CONTACT_EMAIL=${HUB_NETWORK_CONTACT_EMAIL:-}
+      - NETWORK_CONTACT_DISCORD=${HUB_NETWORK_CONTACT_DISCORD:-}
+      - NETWORK_CONTACT_GITHUB=${HUB_NETWORK_CONTACT_GITHUB:-}
+      - NETWORK_WELCOME_TEXT=${HUB_NETWORK_WELCOME_TEXT:-}
     command: ["web"]
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8080/health')"]
@@ -135,7 +135,7 @@ services:
       - "traefik.enable=true"
       - "traefik.http.routers.hub-web.rule=Host(`alpha.${ROOT_DOMAIN}`) || HostRegexp(`(.+).alpha.${ROOT_DOMAIN}`)"
       - "traefik.http.routers.hub-web.entrypoints=websecure"
-      - "traefik.http.routers.hub-web.tls.certresolver=cloudflare"
+      - "traefik.http.routers.hub-web.tls.certresolver=default"
       - "traefik.http.services.hub-web.loadbalancer.server.port=8080"
 
   hub-migrate:
@@ -148,6 +148,7 @@ services:
     volumes:
       - ${HUB_DATA_HOME}:/data
     environment:
+      - LOG_LEVEL=${HUB_LOG_LEVEL:-INFO}
       - DATA_HOME=/data
     command: ["db", "upgrade"]
 
@@ -162,9 +163,9 @@ services:
       - ${HUB_DATA_HOME}:/data
       - ${HUB_SEED_HOME}:/seed:ro
     environment:
+      - LOG_LEVEL=${HUB_LOG_LEVEL:-INFO}
       - DATA_HOME=/data
       - SEED_HOME=/seed
-      - LOG_LEVEL=${LOG_LEVEL:-INFO}
     command: ["collector", "seed"]
 
   # === Website ===
@@ -184,7 +185,7 @@ services:
       - "traefik.enable=true"
       - "traefik.http.routers.website-prod.rule=Host(`${ROOT_DOMAIN}`) || HostRegexp(`(.+).${ROOT_DOMAIN}`)"
       - "traefik.http.routers.website-prod.entrypoints=websecure"
-      - "traefik.http.routers.website-prod.tls.certresolver=cloudflare"
+      - "traefik.http.routers.website-prod.tls.certresolver=default"
       - "traefik.http.services.website-prod.loadbalancer.server.port=5000"
 
   website-stg:
@@ -204,7 +205,7 @@ services:
       - "traefik.http.routers.website-stg.rule=Host(`beta.${ROOT_DOMAIN}`) || HostRegexp(`(.*).beta.${ROOT_DOMAIN}`)"
       - "traefik.http.routers.website-stg.priority=100"
       - "traefik.http.routers.website-stg.entrypoints=websecure"
-      - "traefik.http.routers.website-stg.tls.certresolver=cloudflare"
+      - "traefik.http.routers.website-stg.tls.certresolver=default"
       - "traefik.http.services.website-stg.loadbalancer.server.port=5000"
 
   # === MQTT Broker ===
@@ -226,13 +227,13 @@ services:
       # MQTT over TLS (8883) - Traefik terminates TLS and forwards to plain MQTT
       - "traefik.tcp.routers.mqtt-tls.rule=HostSNI(`mqtt.${ROOT_DOMAIN}`)"
       - "traefik.tcp.routers.mqtt-tls.entrypoints=mqtt"
-      - "traefik.tcp.routers.mqtt-tls.tls.certresolver=cloudflare"
+      - "traefik.tcp.routers.mqtt-tls.tls.certresolver=default"
       - "traefik.tcp.routers.mqtt-tls.service=mqtt-tls"
       - "traefik.tcp.services.mqtt-tls.loadbalancer.server.port=1883"
       # MQTT WebSockets (WSS)
       - "traefik.http.routers.mqtt-ws.rule=Host(`mqtt.${ROOT_DOMAIN}`) && Path(`/mqtt`)"
       - "traefik.http.routers.mqtt-ws.entrypoints=websecure"
-      - "traefik.http.routers.mqtt-ws.tls.certresolver=cloudflare"
+      - "traefik.http.routers.mqtt-ws.tls.certresolver=default"
       - "traefik.http.services.mqtt-ws.loadbalancer.server.port=8080"
 
 # === Networks & Volumes ===
