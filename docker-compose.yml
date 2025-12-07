@@ -35,7 +35,7 @@ services:
       - --certificatesresolvers.default.acme.storage=/acme/acme.json
       - --entrypoints.web.http.redirections.entrypoint.to=websecure
       - --entrypoints.web.http.redirections.entrypoint.scheme=https
-      - --log.level=DEBUG
+      - --log.level=INFO
       - --log.format=common
       - --accesslog=true
       - --accesslog.format=common
@@ -100,6 +100,12 @@ services:
       timeout: 10s
       retries: 3
       start_period: 10s
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.hub-api.rule=Host(`api.${ROOT_DOMAIN}`)"
+      - "traefik.http.routers.hub-api.entrypoints=websecure"
+      - "traefik.http.routers.hub-api.tls.certresolver=default"
+      - "traefik.http.services.hub-api.loadbalancer.server.port=8000"
 
   hub-web:
     image: ghcr.io/ipnet-mesh/meshcore-hub:${HUB_IMAGE_VERSION:-latest}
@@ -133,7 +139,7 @@ services:
       start_period: 10s
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.hub-web.rule=Host(`alpha.${ROOT_DOMAIN}`) || HostRegexp(`(.+).alpha.${ROOT_DOMAIN}`)"
+      - "traefik.http.routers.hub-web.rule=Host(`alpha.${ROOT_DOMAIN}`)" # || HostRegexp(`(.+).alpha.${ROOT_DOMAIN}`)"
       - "traefik.http.routers.hub-web.entrypoints=websecure"
       - "traefik.http.routers.hub-web.tls.certresolver=default"
       - "traefik.http.services.hub-web.loadbalancer.server.port=8080"
@@ -183,7 +189,7 @@ services:
       - website-prod-data:/app/instance
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.website-prod.rule=Host(`${ROOT_DOMAIN}`) || Host(`www.${ROOT_DOMAIN}`) || HostRegexp(`(.+).${ROOT_DOMAIN}`)"
+      - "traefik.http.routers.website-prod.rule=Host(`${ROOT_DOMAIN}`) || Host(`www.${ROOT_DOMAIN}`)" # || HostRegexp(`(.+).${ROOT_DOMAIN}`)"
       - "traefik.http.routers.website-prod.entrypoints=websecure"
       - "traefik.http.routers.website-prod.tls.certresolver=default"
       - "traefik.http.services.website-prod.loadbalancer.server.port=5000"
@@ -202,7 +208,7 @@ services:
       - website-stg-data:/app/instance
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.website-stg.rule=Host(`beta.${ROOT_DOMAIN}`) || HostRegexp(`(.*).beta.${ROOT_DOMAIN}`)"
+      - "traefik.http.routers.website-stg.rule=Host(`beta.${ROOT_DOMAIN}`)" # || HostRegexp(`(.*).beta.${ROOT_DOMAIN}`)"
       - "traefik.http.routers.website-stg.priority=100"
       - "traefik.http.routers.website-stg.entrypoints=websecure"
       - "traefik.http.routers.website-stg.tls.certresolver=default"
