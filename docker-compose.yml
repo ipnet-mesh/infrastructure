@@ -51,8 +51,8 @@ services:
     networks:
       - proxy
     volumes:
-      - hub-data:/data
-      # - ${SEED_HOME:-./seed}:/seed
+      - ${HUB_DATA_HOME}:/data
+      - ${HUB_SEED_HOME}:/seed
     environment:
       - LOG_LEVEL=INFO
       - MQTT_HOST=mosquitto
@@ -80,7 +80,7 @@ services:
       hub-collector:
         condition: service_started
     volumes:
-      - hub-data:/data
+      - ${HUB_DATA_HOME}:/data
     environment:
       - LOG_LEVEL=INFO
       - MQTT_HOST=mosquitto
@@ -137,6 +137,35 @@ services:
       - "traefik.http.routers.hub-web.entrypoints=websecure"
       - "traefik.http.routers.hub-web.tls.certresolver=cloudflare"
       - "traefik.http.services.hub-web.loadbalancer.server.port=8080"
+
+  hub-migrate:
+    image: ghcr.io/ipnet-mesh/meshcore-hub:latest
+    container_name: hub-migrate
+    restart: on-failure
+    depends_on:
+      hub-collector:
+        condition: service_healthy
+    volumes:
+      - ${HUB_DATA_HOME}:/data
+    environment:
+      - DATA_HOME=/data
+    command: ["db", "upgrade"]
+
+  hub-seed:
+    image: ghcr.io/ipnet-mesh/meshcore-hub:latest
+    container_name: hub-seed
+    restart: on-failure
+    depends_on:
+      hub-migrate:
+        condition: service_completed_successfully
+    volumes:
+      - ${HUB_DATA_HOME}:/data
+      - ${HUB_SEED_HOME}:/seed:ro
+    environment:
+      - DATA_HOME=/data
+      - SEED_HOME=/seed
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+    command: ["collector", "seed"]
 
   # === Website ===
 
@@ -213,7 +242,6 @@ networks:
     external: true
 
 volumes:
-  hub-data:
   website-prod-data:
   website-stg-data:
   website-dev-data:
