@@ -139,7 +139,7 @@ services:
       start_period: 10s
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.hub-web.rule=Host(`alpha.${ROOT_DOMAIN}`)" # || HostRegexp(`(.+).alpha.${ROOT_DOMAIN}`)"
+      - "traefik.http.routers.hub-web.rule=Host(`${ROOT_DOMAIN}`) || Host(`www.${ROOT_DOMAIN}`)" # || HostRegexp(`(.+).alpha.${ROOT_DOMAIN}`)"
       - "traefik.http.routers.hub-web.entrypoints=websecure"
       - "traefik.http.routers.hub-web.tls.certresolver=default"
       - "traefik.http.services.hub-web.loadbalancer.server.port=8080"
@@ -188,11 +188,11 @@ services:
     volumes:
       - website-prod-data:/app/instance
     labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.website-prod.rule=Host(`${ROOT_DOMAIN}`) || Host(`www.${ROOT_DOMAIN}`)" # || HostRegexp(`(.+).${ROOT_DOMAIN}`)"
-      - "traefik.http.routers.website-prod.entrypoints=websecure"
-      - "traefik.http.routers.website-prod.tls.certresolver=default"
-      - "traefik.http.services.website-prod.loadbalancer.server.port=5000"
+      - "traefik.enable=false"
+      # - "traefik.http.routers.website-prod.rule=Host(`${ROOT_DOMAIN}`) || Host(`www.${ROOT_DOMAIN}`)" # || HostRegexp(`(.+).${ROOT_DOMAIN}`)"
+      # - "traefik.http.routers.website-prod.entrypoints=websecure"
+      # - "traefik.http.routers.website-prod.tls.certresolver=default"
+      # - "traefik.http.services.website-prod.loadbalancer.server.port=5000"
 
   website-stg:
     image: ghcr.io/ipnet-mesh/website:main
@@ -207,12 +207,12 @@ services:
     volumes:
       - website-stg-data:/app/instance
     labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.website-stg.rule=Host(`beta.${ROOT_DOMAIN}`)" # || HostRegexp(`(.*).beta.${ROOT_DOMAIN}`)"
-      - "traefik.http.routers.website-stg.priority=100"
-      - "traefik.http.routers.website-stg.entrypoints=websecure"
-      - "traefik.http.routers.website-stg.tls.certresolver=default"
-      - "traefik.http.services.website-stg.loadbalancer.server.port=5000"
+      - "traefik.enable=false"
+      # - "traefik.http.routers.website-stg.rule=Host(`beta.${ROOT_DOMAIN}`)" # || HostRegexp(`(.*).beta.${ROOT_DOMAIN}`)"
+      # - "traefik.http.routers.website-stg.priority=100"
+      # - "traefik.http.routers.website-stg.entrypoints=websecure"
+      # - "traefik.http.routers.website-stg.tls.certresolver=default"
+      # - "traefik.http.services.website-stg.loadbalancer.server.port=5000"
 
   # === MQTT Broker ===
 
