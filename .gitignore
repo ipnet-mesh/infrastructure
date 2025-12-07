@@ -1,3 +1,3 @@
 .env
-docker/compose/mosquitto/config/acl.conf
-docker/compose/mosquitto/config/passwd
+config/mosquitto/acl.conf
+config/mosquitto/passwd

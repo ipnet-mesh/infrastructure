@@ -1,0 +1,223 @@
+services:
+
+  # === Traefik Reverse Proxy ===
+
+  traefik:
+    image: traefik:v3.6
+    container_name: traefik
+    restart: unless-stopped
+    networks:
+      - proxy
+    ports:
+      - "80:80"
+      - "443:443"
+      - "8883:8883"  # MQTT over TLS
+    environment:
+      - CF_API_EMAIL=${CF_API_EMAIL}
+      - CF_DNS_API_TOKEN=${CF_DNS_API_TOKEN}
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./config/traefik/config.yml:/etc/traefik/static/config.yml:ro
+      - acme:/acme
+    command:
+      - --api.dashboard=true
+      - --api.insecure=true
+      - --providers.docker=true
+      - --providers.docker.exposedbydefault=false
+      - --providers.file.directory=/etc/traefik/static
+      - --providers.file.watch=true
+      - --entrypoints.web.address=:80
+      - --entrypoints.websecure.address=:443
+      - --entrypoints.mqtt.address=:8883
+      # - --certificatesresolvers.cloudflare.acme.dnschallenge=true
+      # - --certificatesresolvers.cloudflare.acme.dnschallenge.provider=cloudflare
+      # - --certificatesresolvers.cloudflare.acme.email=${ACME_EMAIL}
+      # - --certificatesresolvers.cloudflare.acme.storage=/acme/acme.json
+      # - --entrypoints.web.http.redirections.entrypoint.to=websecure
+      # - --entrypoints.web.http.redirections.entrypoint.scheme=https
+      - --log.level=INFO
+      - --log.format=common
+      - --accesslog=true
+      - --accesslog.format=common
+    labels:
+      - "traefik.enable=false"
+
+  # === Hub ===
+
+  hub-collector:
+    image: ghcr.io/ipnet-mesh/meshcore-hub:latest
+    container_name: hub-collector
+    restart: unless-stopped
+    networks:
+      - proxy
+    volumes:
+      - hub-data:/data
+      # - ${SEED_HOME:-./seed}:/seed
+    environment:
+      - LOG_LEVEL=INFO
+      - MQTT_HOST=mosquitto
+      - MQTT_PORT=1883
+      - MQTT_USERNAME=${MQTT_USERNAME:-}
+      - MQTT_PASSWORD=${MQTT_PASSWORD:-}
+      - MQTT_PREFIX=meshcore
+      - DATA_HOME=/data
+      - SEED_HOME=/seed
+    command: ["collector"]
+    healthcheck:
+      test: ["CMD", "meshcore-hub", "health", "collector"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+  
+  hub-api:
+    image: ghcr.io/ipnet-mesh/meshcore-hub:latest
+    container_name: hub-api
+    restart: unless-stopped
+    networks:
+      - proxy
+    depends_on:
+      hub-collector:
+        condition: service_started
+    volumes:
+      - hub-data:/data
+    environment:
+      - LOG_LEVEL=INFO
+      - MQTT_HOST=mosquitto
+      - MQTT_PORT=1883
+      - MQTT_USERNAME=${MQTT_USERNAME:-}
+      - MQTT_PASSWORD=${MQTT_PASSWORD:-}
+      - MQTT_PREFIX=meshcore
+      - DATA_HOME=/data
+      - API_HOST=0.0.0.0
+      - API_PORT=8000
+      - API_READ_KEY=${API_READ_KEY:-}
+      - API_ADMIN_KEY=${API_ADMIN_KEY:-}
+    command: ["api"]
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  hub-web:
+    image: ghcr.io/ipnet-mesh/meshcore-hub:latest
+    container_name: hub-web
+    restart: unless-stopped
+    networks:
+      - proxy
+    depends_on:
+      hub-api:
+        condition: service_healthy
+    environment:
+      - LOG_LEVEL=INFO
+      - API_BASE_URL=http://hub-api:8000
+      - API_KEY=${API_READ_KEY:-}
+      - WEB_HOST=0.0.0.0
+      - WEB_PORT=8080
+      - NETWORK_NAME=${NETWORK_NAME:-MeshCore Network}
+      - NETWORK_CITY=${NETWORK_CITY:-}
+      - NETWORK_COUNTRY=${NETWORK_COUNTRY:-}
+      - NETWORK_RADIO_CONFIG=${NETWORK_RADIO_CONFIG:-}
+      - NETWORK_CONTACT_EMAIL=${NETWORK_CONTACT_EMAIL:-}
+      - NETWORK_CONTACT_DISCORD=${NETWORK_CONTACT_DISCORD:-}
+      - NETWORK_CONTACT_GITHUB=${NETWORK_CONTACT_GITHUB:-}
+      - NETWORK_WELCOME_TEXT=${NETWORK_WELCOME_TEXT:-}
+    command: ["web"]
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8080/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.hub-web.rule=Host(`alpha.${ROOT_DOMAIN}`) || HostRegexp(`(.+).alpha.${ROOT_DOMAIN}`)"
+      - "traefik.http.routers.hub-web.entrypoints=websecure"
+      - "traefik.http.routers.hub-web.tls.certresolver=cloudflare"
+      - "traefik.http.services.hub-web.loadbalancer.server.port=8080"
+
+  # === Website ===
+
+  website-prod:
+    image: ghcr.io/ipnet-mesh/website:latest
+    container_name: website-prod
+    restart: unless-stopped
+    networks:
+      - proxy
+    environment:
+      - FLASK_ENV=production
+      - FLASK_DEBUG=false
+    volumes:
+      - website-prod-data:/app/instance
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.website-prod.rule=Host(`${ROOT_DOMAIN}`) || HostRegexp(`(.+).${ROOT_DOMAIN}`)"
+      - "traefik.http.routers.website-prod.entrypoints=websecure"
+      - "traefik.http.routers.website-prod.tls.certresolver=cloudflare"
+      - "traefik.http.services.website-prod.loadbalancer.server.port=5000"
+
+  website-stg:
+    image: ghcr.io/ipnet-mesh/website:main
+    container_name: website-stg
+    restart: unless-stopped
+    networks:
+      - proxy
+    environment:
+      - FLASK_ENV=production
+      - FLASK_DEBUG=false
+      - BUILD_MODE=beta
+    volumes:
+      - website-stg-data:/app/instance
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.website-stg.rule=Host(`beta.${ROOT_DOMAIN}`) || HostRegexp(`(.*).beta.${ROOT_DOMAIN}`)"
+      - "traefik.http.routers.website-stg.priority=100"
+      - "traefik.http.routers.website-stg.entrypoints=websecure"
+      - "traefik.http.routers.website-stg.tls.certresolver=cloudflare"
+      - "traefik.http.services.website-stg.loadbalancer.server.port=5000"
+
+  # === MQTT Broker ===
+
+  mosquitto:
+    image: eclipse-mosquitto:2.0
+    container_name: mosquitto
+    restart: unless-stopped
+    networks:
+      - proxy
+    volumes:
+      - ./config/mosquitto/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
+      - ./config/mosquitto/acl.conf:/mosquitto/config/acl.conf:ro
+      - ./config/mosquitto/passwd:/mosquitto/config/passwd:ro
+      # - ./config/bridges:/mosquitto/config/bridges:ro
+      - mosquitto-data:/mosquitto/data
+    labels:
+      - "traefik.enable=true"
+      # MQTT over TLS (8883) - Traefik terminates TLS and forwards to plain MQTT
+      - "traefik.tcp.routers.mqtt-tls.rule=HostSNI(`mqtt.${ROOT_DOMAIN}`)"
+      - "traefik.tcp.routers.mqtt-tls.entrypoints=mqtt"
+      - "traefik.tcp.routers.mqtt-tls.tls.certresolver=cloudflare"
+      - "traefik.tcp.routers.mqtt-tls.service=mqtt-tls"
+      - "traefik.tcp.services.mqtt-tls.loadbalancer.server.port=1883"
+      # MQTT WebSockets (WSS)
+      - "traefik.http.routers.mqtt-ws.rule=Host(`mqtt.${ROOT_DOMAIN}`) && Path(`/mqtt`)"
+      - "traefik.http.routers.mqtt-ws.entrypoints=websecure"
+      - "traefik.http.routers.mqtt-ws.tls.certresolver=cloudflare"
+      - "traefik.http.services.mqtt-ws.loadbalancer.server.port=8080"
+
+# === Networks & Volumes ===
+
+networks:
+  proxy:
+    external: true
+
+volumes:
+  hub-data:
+  website-prod-data:
+  website-stg-data:
+  website-dev-data:
+  mosquitto-data:
+  acme:
+    external: true
+  
