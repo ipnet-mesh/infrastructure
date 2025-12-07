@@ -35,7 +35,7 @@ services:
       - --certificatesresolvers.default.acme.storage=/acme/acme.json
       - --entrypoints.web.http.redirections.entrypoint.to=websecure
       - --entrypoints.web.http.redirections.entrypoint.scheme=https
-      - --log.level=INFO
+      - --log.level=DEBUG
       - --log.format=common
       - --accesslog=true
       - --accesslog.format=common
@@ -183,7 +183,7 @@ services:
       - website-prod-data:/app/instance
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.website-prod.rule=Host(`${ROOT_DOMAIN}`) || HostRegexp(`(.+).${ROOT_DOMAIN}`)"
+      - "traefik.http.routers.website-prod.rule=Host(`${ROOT_DOMAIN}`) || Host(`www.${ROOT_DOMAIN}`) || HostRegexp(`(.+).${ROOT_DOMAIN}`)"
       - "traefik.http.routers.website-prod.entrypoints=websecure"
       - "traefik.http.routers.website-prod.tls.certresolver=default"
       - "traefik.http.services.website-prod.loadbalancer.server.port=5000"
