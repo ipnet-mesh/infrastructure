@@ -1,4 +1,5 @@
 .env
 config/mosquitto/acl.conf
 config/mosquitto/passwd
+backup/
 data/
