@@ -62,6 +62,7 @@ services:
       - MQTT_PREFIX=meshcore
       - DATA_HOME=/data
       - SEED_HOME=/seed
+      - NODE_CLEANUP_DAYS=${HUB_NODE_CLEANUP_DAYS}
     command: ["collector"]
     healthcheck:
       test: ["CMD", "meshcore-hub", "health", "collector"]
@@ -188,6 +189,7 @@ services:
       - MQTT_PREFIX=meshcore
       - DATA_HOME=/data
       - SEED_HOME=/seed
+      - NODE_CLEANUP_DAYS=${HUB_NODE_CLEANUP_DAYS}
     command: ["collector"]
     healthcheck:
       test: ["CMD", "meshcore-hub", "health", "collector"]

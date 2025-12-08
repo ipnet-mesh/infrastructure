@@ -1,0 +1,12 @@
+[Unit]
+Description=Docker Compose Stack Updater
+Wants=docker-compose-update.timer
+
+[Service]
+Type=oneshot
+User=root
+WorkingDirectory=/home/apps/ipnet/infrastructure
+ExecStart=/bin/bash -c 'source ./.env && docker compose pull && docker compose up -d'
+
+[Install]
+WantedBy=multi-user.target

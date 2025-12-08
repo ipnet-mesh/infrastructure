@@ -1,0 +1,10 @@
+[Unit]
+Description=Update Docker Compose Services
+Requires=docker-compose-update.service
+
+[Timer]
+OnCalendar=hourly
+Persistent=true
+
+[Install]
+WantedBy=timers.target
