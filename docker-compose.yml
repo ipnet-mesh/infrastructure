@@ -1,6 +1,6 @@
 services:
 
-  # === Traefik Reverse Proxy ===
+  # === TRAEFIK: REVERSE PROXY ===
 
   traefik:
     image: traefik:v3.6
@@ -42,16 +42,16 @@ services:
     labels:
       - "traefik.enable=false"
 
-  # === Hub ===
+  # === MESHCORE HUB: PRODUCTION ===
 
-  hub-collector:
-    image: ghcr.io/ipnet-mesh/meshcore-hub:${HUB_IMAGE_VERSION:-latest}
-    container_name: hub-collector
+  hub-collector-prod:
+    image: ghcr.io/ipnet-mesh/meshcore-hub:latest
+    container_name: hub-collector-prod
     restart: unless-stopped
     networks:
       - proxy
     volumes:
-      - ${HUB_DATA_HOME}:/data
+      - ./data/hub/prod:/data
       - ${HUB_SEED_HOME}:/seed
     environment:
       - LOG_LEVEL=${HUB_LOG_LEVEL:-INFO}
@@ -70,17 +70,17 @@ services:
       retries: 3
       start_period: 10s
   
-  hub-api:
-    image: ghcr.io/ipnet-mesh/meshcore-hub:${HUB_IMAGE_VERSION:-latest}
-    container_name: hub-api
+  hub-api-prod:
+    image: ghcr.io/ipnet-mesh/meshcore-hub:latest
+    container_name: hub-api-prod
     restart: unless-stopped
     networks:
       - proxy
     depends_on:
-      hub-collector:
+      hub-collector-prod:
         condition: service_started
     volumes:
-      - ${HUB_DATA_HOME}:/data
+      - ./data/hub/prod:/data
     environment:
       - LOG_LEVEL=${HUB_LOG_LEVEL:-INFO}
       - MQTT_HOST=mosquitto
@@ -102,23 +102,23 @@ services:
       start_period: 10s
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.hub-api.rule=Host(`api.${ROOT_DOMAIN}`)"
-      - "traefik.http.routers.hub-api.entrypoints=websecure"
-      - "traefik.http.routers.hub-api.tls.certresolver=default"
-      - "traefik.http.services.hub-api.loadbalancer.server.port=8000"
+      - "traefik.http.routers.hub-api-prod.rule=Host(`api.${ROOT_DOMAIN}`)"
+      - "traefik.http.routers.hub-api-prod.entrypoints=websecure"
+      - "traefik.http.routers.hub-api-prod.tls.certresolver=default"
+      - "traefik.http.services.hub-api-prod.loadbalancer.server.port=8000"
 
-  hub-web:
-    image: ghcr.io/ipnet-mesh/meshcore-hub:${HUB_IMAGE_VERSION:-latest}
-    container_name: hub-web
+  hub-web-prod:
+    image: ghcr.io/ipnet-mesh/meshcore-hub:latest
+    container_name: hub-web-prod
     restart: unless-stopped
     networks:
       - proxy
     depends_on:
-      hub-api:
+      hub-api-prod:
         condition: service_healthy
     environment:
       - LOG_LEVEL=${HUB_LOG_LEVEL:-INFO}
-      - API_BASE_URL=http://hub-api:8000
+      - API_BASE_URL=http://hub-api-prod:8000
       - API_KEY=${HUB_API_READ_KEY:-}
       - WEB_HOST=0.0.0.0
       - WEB_PORT=8080
@@ -139,34 +139,28 @@ services:
       start_period: 10s
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.hub-web.rule=Host(`${ROOT_DOMAIN}`) || Host(`www.${ROOT_DOMAIN}`)" # || HostRegexp(`(.+).alpha.${ROOT_DOMAIN}`)"
-      - "traefik.http.routers.hub-web.entrypoints=websecure"
-      - "traefik.http.routers.hub-web.tls.certresolver=default"
-      - "traefik.http.services.hub-web.loadbalancer.server.port=8080"
+      - "traefik.http.routers.hub-web-prod.rule=Host(`${ROOT_DOMAIN}`) || Host(`www.${ROOT_DOMAIN}`)" # || HostRegexp(`(.+).alpha.${ROOT_DOMAIN}`)"
+      - "traefik.http.routers.hub-web-prod.entrypoints=websecure"
+      - "traefik.http.routers.hub-web-prod.tls.certresolver=default"
+      - "traefik.http.services.hub-web-prod.loadbalancer.server.port=8080"
 
-  hub-migrate:
+  hub-migrate-prod:
     image: ghcr.io/ipnet-mesh/meshcore-hub:latest
-    container_name: hub-migrate
+    container_name: hub-migrate-prod
     restart: on-failure
-    depends_on:
-      hub-collector:
-        condition: service_healthy
     volumes:
-      - ${HUB_DATA_HOME}:/data
+      - ./data/hub/prod:/data
     environment:
       - LOG_LEVEL=${HUB_LOG_LEVEL:-INFO}
       - DATA_HOME=/data
     command: ["db", "upgrade"]
 
-  hub-seed:
+  hub-seed-prod:
     image: ghcr.io/ipnet-mesh/meshcore-hub:latest
-    container_name: hub-seed
+    container_name: hub-seed-prod
     restart: on-failure
-    depends_on:
-      hub-migrate:
-        condition: service_completed_successfully
     volumes:
-      - ${HUB_DATA_HOME}:/data
+      - ./data/hub/prod:/data
       - ${HUB_SEED_HOME}:/seed:ro
     environment:
       - LOG_LEVEL=${HUB_LOG_LEVEL:-INFO}
@@ -174,48 +168,134 @@ services:
       - SEED_HOME=/seed
     command: ["collector", "seed"]
 
-  # === Website ===
+  # === MESHCORE HUB: STAGING ===
 
-  website-prod:
-    image: ghcr.io/ipnet-mesh/website:latest
-    container_name: website-prod
+  hub-collector-stg:
+    image: ghcr.io/ipnet-mesh/meshcore-hub:main
+    container_name: hub-collector-stg
     restart: unless-stopped
     networks:
       - proxy
-    environment:
-      - FLASK_ENV=production
-      - FLASK_DEBUG=false
     volumes:
-      - website-prod-data:/app/instance
-    labels:
-      - "traefik.enable=false"
-      # - "traefik.http.routers.website-prod.rule=Host(`${ROOT_DOMAIN}`) || Host(`www.${ROOT_DOMAIN}`)" # || HostRegexp(`(.+).${ROOT_DOMAIN}`)"
-      # - "traefik.http.routers.website-prod.entrypoints=websecure"
-      # - "traefik.http.routers.website-prod.tls.certresolver=default"
-      # - "traefik.http.services.website-prod.loadbalancer.server.port=5000"
-
-  website-stg:
-    image: ghcr.io/ipnet-mesh/website:main
-    container_name: website-stg
+      - ./data/hub/stg:/data
+      - ${HUB_SEED_HOME}:/seed
+    environment:
+      - LOG_LEVEL=${HUB_LOG_LEVEL:-INFO}
+      - MQTT_HOST=mosquitto
+      - MQTT_PORT=1883
+      - MQTT_USERNAME=${MQTT_USERNAME:-}
+      - MQTT_PASSWORD=${MQTT_PASSWORD:-}
+      - MQTT_PREFIX=meshcore
+      - DATA_HOME=/data
+      - SEED_HOME=/seed
+    command: ["collector"]
+    healthcheck:
+      test: ["CMD", "meshcore-hub", "health", "collector"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+  
+  hub-api-stg:
+    image: ghcr.io/ipnet-mesh/meshcore-hub:main
+    container_name: hub-api-stg
     restart: unless-stopped
     networks:
       - proxy
-    environment:
-      - FLASK_ENV=production
-      - FLASK_DEBUG=false
-      - BUILD_MODE=beta
+    depends_on:
+      hub-collector-stg:
+        condition: service_started
     volumes:
-      - website-stg-data:/app/instance
+      - ./data/hub/stg:/data
+    environment:
+      - LOG_LEVEL=${HUB_LOG_LEVEL:-INFO}
+      - MQTT_HOST=mosquitto
+      - MQTT_PORT=1883
+      - MQTT_USERNAME=${MQTT_USERNAME:-}
+      - MQTT_PASSWORD=${MQTT_PASSWORD:-}
+      - MQTT_PREFIX=${MQTT_PREFIX:-meshcore}
+      - DATA_HOME=/data
+      - API_HOST=0.0.0.0
+      - API_PORT=8000
+      - API_READ_KEY=${HUB_API_READ_KEY:-}
+      - API_ADMIN_KEY=${HUB_API_ADMIN_KEY:-}
+    command: ["api"]
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
     labels:
-      - "traefik.enable=false"
-      # - "traefik.http.routers.website-stg.rule=Host(`beta.${ROOT_DOMAIN}`)" # || HostRegexp(`(.*).beta.${ROOT_DOMAIN}`)"
-      # - "traefik.http.routers.website-stg.priority=100"
-      # - "traefik.http.routers.website-stg.entrypoints=websecure"
-      # - "traefik.http.routers.website-stg.tls.certresolver=default"
-      # - "traefik.http.services.website-stg.loadbalancer.server.port=5000"
+      - "traefik.enable=true"
+      - "traefik.http.routers.hub-api-stg.rule=Host(`api.beta.${ROOT_DOMAIN}`)"
+      - "traefik.http.routers.hub-api-stg.entrypoints=websecure"
+      - "traefik.http.routers.hub-api-stg.tls.certresolver=default"
+      - "traefik.http.services.hub-api-stg.loadbalancer.server.port=8000"
 
-  # === MQTT Broker ===
+  hub-web-stg:
+    image: ghcr.io/ipnet-mesh/meshcore-hub:main
+    container_name: hub-web-stg
+    restart: unless-stopped
+    networks:
+      - proxy
+    depends_on:
+      hub-api-stg:
+        condition: service_healthy
+    environment:
+      - LOG_LEVEL=${HUB_LOG_LEVEL:-INFO}
+      - API_BASE_URL=http://hub-api-stg:8000
+      - API_KEY=${HUB_API_READ_KEY:-}
+      - WEB_HOST=0.0.0.0
+      - WEB_PORT=8080
+      - NETWORK_NAME=${HUB_NETWORK_NAME:-MeshCore Network}
+      - NETWORK_CITY=${HUB_NETWORK_CITY:-}
+      - NETWORK_COUNTRY=${HUB_NETWORK_COUNTRY:-}
+      - NETWORK_RADIO_CONFIG=${HUB_NETWORK_RADIO_CONFIG:-}
+      - NETWORK_CONTACT_EMAIL=${HUB_NETWORK_CONTACT_EMAIL:-}
+      - NETWORK_CONTACT_DISCORD=${HUB_NETWORK_CONTACT_DISCORD:-}
+      - NETWORK_CONTACT_GITHUB=${HUB_NETWORK_CONTACT_GITHUB:-}
+      - NETWORK_WELCOME_TEXT=${HUB_NETWORK_WELCOME_TEXT:-}
+    command: ["web"]
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8080/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.hub-web-stg.rule=Host(`beta.${ROOT_DOMAIN}`)" # || HostRegexp(`(.+).alpha.${ROOT_DOMAIN}`)"
+      - "traefik.http.routers.hub-web-stg.entrypoints=websecure"
+      - "traefik.http.routers.hub-web-stg.tls.certresolver=default"
+      - "traefik.http.services.hub-web-stg.loadbalancer.server.port=8080"
 
+  hub-migrate-stg:
+    image: ghcr.io/ipnet-mesh/meshcore-hub:main
+    container_name: hub-migrate-stg
+    restart: on-failure
+    volumes:
+      - ./data/hub/stg:/data
+    environment:
+      - LOG_LEVEL=${HUB_LOG_LEVEL:-INFO}
+      - DATA_HOME=/data
+    command: ["db", "upgrade"]
+
+  hub-seed-stg:
+    image: ghcr.io/ipnet-mesh/meshcore-hub:main
+    container_name: hub-seed-stg
+    restart: on-failure
+    volumes:
+      - ./data/hub/stg:/data
+      - ${HUB_SEED_HOME}:/seed:ro
+    environment:
+      - LOG_LEVEL=${HUB_LOG_LEVEL:-INFO}
+      - DATA_HOME=/data
+      - SEED_HOME=/seed
+    command: ["collector", "seed"]
+
+  # === MQTT BROKER ===
+  
   mosquitto:
     image: eclipse-mosquitto:2.0
     container_name: mosquitto
