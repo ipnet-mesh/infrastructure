@@ -145,6 +145,8 @@ services:
       - "traefik.http.routers.hub-web-prod.priority=10"
       - "traefik.http.routers.hub-web-prod.entrypoints=websecure"
       - "traefik.http.routers.hub-web-prod.tls.certresolver=default"
+      - "traefik.http.routers.hub-web-prod.tls.domains[0].main=${ROOT_DOMAIN}"
+      - "traefik.http.routers.hub-web-prod.tls.domains[0].sans=*.${ROOT_DOMAIN}"
       - "traefik.http.services.hub-web-prod.loadbalancer.server.port=8080"
 
   hub-migrate-prod:
@@ -274,6 +276,8 @@ services:
       - "traefik.http.routers.hub-web-stg.priority=10"
       - "traefik.http.routers.hub-web-stg.entrypoints=websecure"
       - "traefik.http.routers.hub-web-stg.tls.certresolver=default"
+      - "traefik.http.routers.hub-web-stg.tls.domains[0].main=beta.${ROOT_DOMAIN}"
+      - "traefik.http.routers.hub-web-stg.tls.domains[0].sans=*.beta.${ROOT_DOMAIN}"
       - "traefik.http.services.hub-web-stg.loadbalancer.server.port=8080"
 
   hub-migrate-stg:
