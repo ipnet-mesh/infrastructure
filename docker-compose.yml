@@ -42,6 +42,84 @@ services:
     labels:
       - "traefik.enable=false"
 
+  # === OAUTH2 PROXY (Production) ===
+
+  oauth2-proxy-prod:
+    image: quay.io/oauth2-proxy/oauth2-proxy:v7.6.0
+    container_name: oauth2-proxy-prod
+    restart: unless-stopped
+    networks:
+      - proxy
+    environment:
+      - OAUTH2_PROXY_PROVIDER=github
+      - OAUTH2_PROXY_CLIENT_ID=${OAUTH2_PROXY_CLIENT_ID}
+      - OAUTH2_PROXY_CLIENT_SECRET=${OAUTH2_PROXY_CLIENT_SECRET}
+      - OAUTH2_PROXY_COOKIE_SECRET=${OAUTH2_PROXY_COOKIE_SECRET}
+      - OAUTH2_PROXY_COOKIE_SECURE=true
+      - OAUTH2_PROXY_COOKIE_NAME=_oauth2_proxy
+      - OAUTH2_PROXY_COOKIE_DOMAIN=.${ROOT_DOMAIN}
+      - OAUTH2_PROXY_REDIRECT_URL=https://${ROOT_DOMAIN}/oauth2/callback
+      - OAUTH2_PROXY_EMAIL_DOMAINS=*
+      - OAUTH2_PROXY_GITHUB_ORG=${OAUTH2_PROXY_GITHUB_ORG:-}
+      - OAUTH2_PROXY_GITHUB_USERS=${OAUTH2_PROXY_GITHUB_USERS:-}
+      - OAUTH2_PROXY_HTTP_ADDRESS=0.0.0.0:4180
+      - OAUTH2_PROXY_REVERSE_PROXY=true
+      - OAUTH2_PROXY_SKIP_PROVIDER_BUTTON=true
+    command:
+      - --upstream=http://hub-web-prod:8080
+    labels:
+      - "traefik.enable=true"
+      # /admin routes
+      - "traefik.http.routers.oauth2-proxy-prod.rule=(Host(`${ROOT_DOMAIN}`) || HostRegexp(`^.+\\.${ROOT_DOMAIN}$`)) && PathPrefix(`/admin`)"
+      - "traefik.http.routers.oauth2-proxy-prod.priority=20"
+      - "traefik.http.routers.oauth2-proxy-prod.entrypoints=websecure"
+      - "traefik.http.routers.oauth2-proxy-prod.tls.certresolver=default"
+      # /oauth2 routes (for callback)
+      - "traefik.http.routers.oauth2-proxy-prod-auth.rule=(Host(`${ROOT_DOMAIN}`) || HostRegexp(`^.+\\.${ROOT_DOMAIN}$`)) && PathPrefix(`/oauth2`)"
+      - "traefik.http.routers.oauth2-proxy-prod-auth.priority=100"
+      - "traefik.http.routers.oauth2-proxy-prod-auth.entrypoints=websecure"
+      - "traefik.http.routers.oauth2-proxy-prod-auth.tls.certresolver=default"
+      - "traefik.http.services.oauth2-proxy-prod.loadbalancer.server.port=4180"
+
+  # === OAUTH2 PROXY (Staging) ===
+
+  oauth2-proxy-stg:
+    image: quay.io/oauth2-proxy/oauth2-proxy:v7.6.0
+    container_name: oauth2-proxy-stg
+    restart: unless-stopped
+    networks:
+      - proxy
+    environment:
+      - OAUTH2_PROXY_PROVIDER=github
+      - OAUTH2_PROXY_CLIENT_ID=${OAUTH2_PROXY_CLIENT_ID}
+      - OAUTH2_PROXY_CLIENT_SECRET=${OAUTH2_PROXY_CLIENT_SECRET}
+      - OAUTH2_PROXY_COOKIE_SECRET=${OAUTH2_PROXY_COOKIE_SECRET}
+      - OAUTH2_PROXY_COOKIE_SECURE=true
+      - OAUTH2_PROXY_COOKIE_NAME=_oauth2_proxy
+      - OAUTH2_PROXY_COOKIE_DOMAIN=.${ROOT_DOMAIN}
+      - OAUTH2_PROXY_REDIRECT_URL=https://${ROOT_DOMAIN}/oauth2/callback
+      - OAUTH2_PROXY_EMAIL_DOMAINS=*
+      - OAUTH2_PROXY_GITHUB_ORG=${OAUTH2_PROXY_GITHUB_ORG:-}
+      - OAUTH2_PROXY_GITHUB_USERS=${OAUTH2_PROXY_GITHUB_USERS:-}
+      - OAUTH2_PROXY_HTTP_ADDRESS=0.0.0.0:4180
+      - OAUTH2_PROXY_REVERSE_PROXY=true
+      - OAUTH2_PROXY_SKIP_PROVIDER_BUTTON=true
+    command:
+      - --upstream=http://hub-web-stg:8080
+    labels:
+      - "traefik.enable=true"
+      # /admin routes
+      - "traefik.http.routers.oauth2-proxy-stg.rule=(Host(`beta.${ROOT_DOMAIN}`) || HostRegexp(`^.+\\.beta\\.${ROOT_DOMAIN}$`)) && PathPrefix(`/admin`)"
+      - "traefik.http.routers.oauth2-proxy-stg.priority=60"
+      - "traefik.http.routers.oauth2-proxy-stg.entrypoints=websecure"
+      - "traefik.http.routers.oauth2-proxy-stg.tls.certresolver=default"
+      # /oauth2 routes (for auth flow on stg domain)
+      - "traefik.http.routers.oauth2-proxy-stg-auth.rule=(Host(`beta.${ROOT_DOMAIN}`) || HostRegexp(`^.+\\.beta\\.${ROOT_DOMAIN}$`)) && PathPrefix(`/oauth2`)"
+      - "traefik.http.routers.oauth2-proxy-stg-auth.priority=100"
+      - "traefik.http.routers.oauth2-proxy-stg-auth.entrypoints=websecure"
+      - "traefik.http.routers.oauth2-proxy-stg-auth.tls.certresolver=default"
+      - "traefik.http.services.oauth2-proxy-stg.loadbalancer.server.port=4180"
+
   # === MESHCORE HUB: PRODUCTION ===
 
   hub-collector-prod:
@@ -272,6 +350,7 @@ services:
       start_period: 10s
     labels:
       - "traefik.enable=true"
+      # Public routes
       - "traefik.http.routers.hub-web-stg.rule=Host(`beta.${ROOT_DOMAIN}`) || HostRegexp(`^.+\\.beta\\.${ROOT_DOMAIN}$`)"
       - "traefik.http.routers.hub-web-stg.priority=50"
       - "traefik.http.routers.hub-web-stg.entrypoints=websecure"
