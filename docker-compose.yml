@@ -273,7 +273,7 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.hub-web-stg.rule=Host(`beta.${ROOT_DOMAIN}`) || HostRegexp(`^.+\\.beta\\.${ROOT_DOMAIN}$`)"
-      - "traefik.http.routers.hub-web-stg.priority=10"
+      - "traefik.http.routers.hub-web-stg.priority=50"
       - "traefik.http.routers.hub-web-stg.entrypoints=websecure"
       - "traefik.http.routers.hub-web-stg.tls.certresolver=default"
       - "traefik.http.routers.hub-web-stg.tls.domains[0].main=beta.${ROOT_DOMAIN}"
