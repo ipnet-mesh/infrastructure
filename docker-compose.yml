@@ -35,7 +35,7 @@ services:
       - --certificatesresolvers.default.acme.storage=/acme/acme.json
       - --entrypoints.web.http.redirections.entrypoint.to=websecure
       - --entrypoints.web.http.redirections.entrypoint.scheme=https
-      - --log.level=INFO
+      - --log.level=DEBUG
       - --log.format=common
       - --accesslog=true
       - --accesslog.format=common
@@ -140,7 +140,7 @@ services:
       start_period: 10s
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.hub-web-prod.rule=Host(`${ROOT_DOMAIN}`) || Host(`www.${ROOT_DOMAIN}`)" # || HostRegexp(`(.+).alpha.${ROOT_DOMAIN}`)"
+      - "traefik.http.routers.hub-web-prod.rule=Host(`${ROOT_DOMAIN}`) || HostRegexp(`(.+).${ROOT_DOMAIN}`)"
       - "traefik.http.routers.hub-web-prod.entrypoints=websecure"
       - "traefik.http.routers.hub-web-prod.tls.certresolver=default"
       - "traefik.http.services.hub-web-prod.loadbalancer.server.port=8080"
@@ -267,7 +267,7 @@ services:
       start_period: 10s
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.hub-web-stg.rule=Host(`beta.${ROOT_DOMAIN}`)" # || HostRegexp(`(.+).alpha.${ROOT_DOMAIN}`)"
+      - "traefik.http.routers.hub-web-stg.rule=Host(`beta.${ROOT_DOMAIN}`) || HostRegexp(`(.+).beta.${ROOT_DOMAIN}`)"
       - "traefik.http.routers.hub-web-stg.entrypoints=websecure"
       - "traefik.http.routers.hub-web-stg.tls.certresolver=default"
       - "traefik.http.services.hub-web-stg.loadbalancer.server.port=8080"

@@ -3,7 +3,7 @@ Description=Update Docker Compose Services
 Requires=docker-compose-update.service
 
 [Timer]
-OnCalendar=hourly
+OnCalendar=*:0/30
 Persistent=true
 
 [Install]
