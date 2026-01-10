@@ -42,6 +42,36 @@ services:
     labels:
       - "traefik.enable=false"
 
+  # === OAUTH2 PROXY ===
+
+  oauth2-proxy:
+    image: quay.io/oauth2-proxy/oauth2-proxy:v7.6.0
+    container_name: oauth2-proxy
+    restart: unless-stopped
+    networks:
+      - proxy
+    environment:
+      - OAUTH2_PROXY_PROVIDER=github
+      - OAUTH2_PROXY_CLIENT_ID=${OAUTH2_PROXY_CLIENT_ID}
+      - OAUTH2_PROXY_CLIENT_SECRET=${OAUTH2_PROXY_CLIENT_SECRET}
+      - OAUTH2_PROXY_COOKIE_SECRET=${OAUTH2_PROXY_COOKIE_SECRET}
+      - OAUTH2_PROXY_COOKIE_SECURE=true
+      - OAUTH2_PROXY_COOKIE_DOMAIN=.${ROOT_DOMAIN}
+      - OAUTH2_PROXY_EMAIL_DOMAINS=*
+      - OAUTH2_PROXY_GITHUB_USERS=${OAUTH2_PROXY_GITHUB_USERS:-}
+      - OAUTH2_PROXY_HTTP_ADDRESS=0.0.0.0:4180
+      - OAUTH2_PROXY_REVERSE_PROXY=true
+      - OAUTH2_PROXY_SET_XAUTHREQUEST=true
+    command:
+      - --upstream=static://202
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.oauth2-proxy.rule=Host(`auth.beta.${ROOT_DOMAIN}`)"
+      - "traefik.http.routers.oauth2-proxy.priority=100"
+      - "traefik.http.routers.oauth2-proxy.entrypoints=websecure"
+      - "traefik.http.routers.oauth2-proxy.tls.certresolver=default"
+      - "traefik.http.services.oauth2-proxy.loadbalancer.server.port=4180"
+
   # === MESHCORE HUB: PRODUCTION ===
 
   hub-collector-prod:
@@ -272,6 +302,7 @@ services:
       start_period: 10s
     labels:
       - "traefik.enable=true"
+      # Public routes
       - "traefik.http.routers.hub-web-stg.rule=Host(`beta.${ROOT_DOMAIN}`) || HostRegexp(`^.+\\.beta\\.${ROOT_DOMAIN}$`)"
       - "traefik.http.routers.hub-web-stg.priority=50"
       - "traefik.http.routers.hub-web-stg.entrypoints=websecure"
@@ -279,6 +310,13 @@ services:
       - "traefik.http.routers.hub-web-stg.tls.domains[0].main=beta.${ROOT_DOMAIN}"
       - "traefik.http.routers.hub-web-stg.tls.domains[0].sans=*.beta.${ROOT_DOMAIN}"
       - "traefik.http.services.hub-web-stg.loadbalancer.server.port=8080"
+      # Admin routes (OAuth2 protected)
+      - "traefik.http.routers.hub-web-stg-admin.rule=(Host(`beta.${ROOT_DOMAIN}`) || HostRegexp(`^.+\\.beta\\.${ROOT_DOMAIN}$`)) && PathPrefix(`/admin`)"
+      - "traefik.http.routers.hub-web-stg-admin.priority=60"
+      - "traefik.http.routers.hub-web-stg-admin.entrypoints=websecure"
+      - "traefik.http.routers.hub-web-stg-admin.tls.certresolver=default"
+      - "traefik.http.routers.hub-web-stg-admin.middlewares=oauth2-proxy-auth@file"
+      - "traefik.http.routers.hub-web-stg-admin.service=hub-web-stg"
 
   hub-migrate-stg:
     image: ghcr.io/ipnet-mesh/meshcore-hub:main
