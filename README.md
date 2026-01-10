@@ -193,7 +193,7 @@ OAuth2 Proxy cookies are configured for domain-wide sharing:
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                     Internet Users                           │
+│                     Internet Users                          │
 └────────────────────────────┬────────────────────────────────┘
                              │ HTTPS (443) / MQTTS (8883)
                     ┌────────▼─────────┐
