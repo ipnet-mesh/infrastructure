@@ -104,6 +104,7 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.hub-api-prod.rule=Host(`api.${ROOT_DOMAIN}`)"
+      - "traefik.http.routers.hub-api-prod.priority=100"
       - "traefik.http.routers.hub-api-prod.entrypoints=websecure"
       - "traefik.http.routers.hub-api-prod.tls.certresolver=default"
       - "traefik.http.services.hub-api-prod.loadbalancer.server.port=8000"
@@ -140,7 +141,8 @@ services:
       start_period: 10s
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.hub-web-prod.rule=Host(`${ROOT_DOMAIN}`) || HostRegexp(`(.+).${ROOT_DOMAIN}`)"
+      - "traefik.http.routers.hub-web-prod.rule=Host(`${ROOT_DOMAIN}`) || HostRegexp(`^.+\\.${ROOT_DOMAIN}$`)"
+      - "traefik.http.routers.hub-web-prod.priority=10"
       - "traefik.http.routers.hub-web-prod.entrypoints=websecure"
       - "traefik.http.routers.hub-web-prod.tls.certresolver=default"
       - "traefik.http.services.hub-web-prod.loadbalancer.server.port=8080"
@@ -231,6 +233,7 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.hub-api-stg.rule=Host(`api.beta.${ROOT_DOMAIN}`)"
+      - "traefik.http.routers.hub-api-stg.priority=100"
       - "traefik.http.routers.hub-api-stg.entrypoints=websecure"
       - "traefik.http.routers.hub-api-stg.tls.certresolver=default"
       - "traefik.http.services.hub-api-stg.loadbalancer.server.port=8000"
@@ -267,7 +270,8 @@ services:
       start_period: 10s
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.hub-web-stg.rule=Host(`beta.${ROOT_DOMAIN}`) || HostRegexp(`(.+).beta.${ROOT_DOMAIN}`)"
+      - "traefik.http.routers.hub-web-stg.rule=Host(`beta.${ROOT_DOMAIN}`) || HostRegexp(`^.+\\.beta\\.${ROOT_DOMAIN}$`)"
+      - "traefik.http.routers.hub-web-stg.priority=10"
       - "traefik.http.routers.hub-web-stg.entrypoints=websecure"
       - "traefik.http.routers.hub-web-stg.tls.certresolver=default"
       - "traefik.http.services.hub-web-stg.loadbalancer.server.port=8080"
@@ -320,6 +324,7 @@ services:
       - "traefik.tcp.services.mqtt-tls.loadbalancer.server.port=1883"
       # MQTT WebSockets (WSS)
       - "traefik.http.routers.mqtt-ws.rule=Host(`mqtt.${ROOT_DOMAIN}`) && Path(`/mqtt`)"
+      - "traefik.http.routers.mqtt-ws.priority=100"
       - "traefik.http.routers.mqtt-ws.entrypoints=websecure"
       - "traefik.http.routers.mqtt-ws.tls.certresolver=default"
       - "traefik.http.services.mqtt-ws.loadbalancer.server.port=8080"
