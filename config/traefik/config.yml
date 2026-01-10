@@ -15,3 +15,15 @@ http:
         authResponseHeaders:
           - X-Auth-Request-User
           - X-Auth-Request-Email
+    oauth2-proxy-signin:
+      errors:
+        status:
+          - "401"
+        service: oauth2-proxy
+        query: "/oauth2/sign_in"
+
+  services:
+    oauth2-proxy:
+      loadBalancer:
+        servers:
+          - url: http://oauth2-proxy:4180
