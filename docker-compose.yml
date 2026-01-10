@@ -68,13 +68,13 @@ services:
     labels:
       - "traefik.enable=true"
       # Dedicated auth host
-      - "traefik.http.routers.oauth2-proxy.rule=Host(`auth.beta.${ROOT_DOMAIN}`)"
+      - "traefik.http.routers.oauth2-proxy.rule=Host(`auth.${ROOT_DOMAIN}`)"
       - "traefik.http.routers.oauth2-proxy.priority=100"
       - "traefik.http.routers.oauth2-proxy.entrypoints=websecure"
       - "traefik.http.routers.oauth2-proxy.tls.certresolver=default"
-      # Handle /oauth2/* paths on staging domain
-      - "traefik.http.routers.oauth2-proxy-paths.rule=(Host(`beta.${ROOT_DOMAIN}`) || HostRegexp(`^.+\\.beta\\.${ROOT_DOMAIN}$`)) && PathPrefix(`/oauth2`)"
-      - "traefik.http.routers.oauth2-proxy-paths.priority=100"
+      # Handle /oauth2/* paths on all domains
+      - "traefik.http.routers.oauth2-proxy-paths.rule=PathPrefix(`/oauth2`)"
+      - "traefik.http.routers.oauth2-proxy-paths.priority=200"
       - "traefik.http.routers.oauth2-proxy-paths.entrypoints=websecure"
       - "traefik.http.routers.oauth2-proxy-paths.tls.certresolver=default"
       - "traefik.http.services.oauth2-proxy.loadbalancer.server.port=4180"
@@ -185,6 +185,13 @@ services:
       - "traefik.http.routers.hub-web-prod.tls.domains[0].main=${ROOT_DOMAIN}"
       - "traefik.http.routers.hub-web-prod.tls.domains[0].sans=*.${ROOT_DOMAIN}"
       - "traefik.http.services.hub-web-prod.loadbalancer.server.port=8080"
+      # Admin routes (OAuth2 protected)
+      - "traefik.http.routers.hub-web-prod-admin.rule=(Host(`${ROOT_DOMAIN}`) || HostRegexp(`^.+\\.${ROOT_DOMAIN}$`)) && PathPrefix(`/admin`)"
+      - "traefik.http.routers.hub-web-prod-admin.priority=20"
+      - "traefik.http.routers.hub-web-prod-admin.entrypoints=websecure"
+      - "traefik.http.routers.hub-web-prod-admin.tls.certresolver=default"
+      - "traefik.http.routers.hub-web-prod-admin.middlewares=oauth2-proxy-signin@file,oauth2-proxy-auth@file"
+      - "traefik.http.routers.hub-web-prod-admin.service=hub-web-prod"
 
   hub-migrate-prod:
     image: ghcr.io/ipnet-mesh/meshcore-hub:latest
