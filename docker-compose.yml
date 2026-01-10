@@ -66,10 +66,16 @@ services:
       - --upstream=static://202
     labels:
       - "traefik.enable=true"
+      # Dedicated auth host
       - "traefik.http.routers.oauth2-proxy.rule=Host(`auth.beta.${ROOT_DOMAIN}`)"
       - "traefik.http.routers.oauth2-proxy.priority=100"
       - "traefik.http.routers.oauth2-proxy.entrypoints=websecure"
       - "traefik.http.routers.oauth2-proxy.tls.certresolver=default"
+      # Handle /oauth2/* paths on staging domain
+      - "traefik.http.routers.oauth2-proxy-paths.rule=(Host(`beta.${ROOT_DOMAIN}`) || HostRegexp(`^.+\\.beta\\.${ROOT_DOMAIN}$`)) && PathPrefix(`/oauth2`)"
+      - "traefik.http.routers.oauth2-proxy-paths.priority=100"
+      - "traefik.http.routers.oauth2-proxy-paths.entrypoints=websecure"
+      - "traefik.http.routers.oauth2-proxy-paths.tls.certresolver=default"
       - "traefik.http.services.oauth2-proxy.loadbalancer.server.port=4180"
 
   # === MESHCORE HUB: PRODUCTION ===
