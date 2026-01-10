@@ -20,7 +20,7 @@ http:
         status:
           - "401"
         service: oauth2-proxy
-        query: "/oauth2/sign_in"
+        query: "/oauth2/start"
 
   services:
     oauth2-proxy:

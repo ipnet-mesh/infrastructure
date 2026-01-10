@@ -57,6 +57,8 @@ services:
       - OAUTH2_PROXY_COOKIE_SECRET=${OAUTH2_PROXY_COOKIE_SECRET}
       - OAUTH2_PROXY_COOKIE_SECURE=true
       - OAUTH2_PROXY_COOKIE_DOMAIN=.${ROOT_DOMAIN}
+      - OAUTH2_PROXY_COOKIE_SAMESITE=lax
+      - OAUTH2_PROXY_WHITELIST_DOMAINS=.${ROOT_DOMAIN}
       - OAUTH2_PROXY_EMAIL_DOMAINS=*
       - OAUTH2_PROXY_GITHUB_ORG=${OAUTH2_PROXY_GITHUB_ORG:-}
       - OAUTH2_PROXY_GITHUB_USERS=${OAUTH2_PROXY_GITHUB_USERS:-}
@@ -66,6 +68,7 @@ services:
       - OAUTH2_PROXY_REDIRECT_URL=https://auth.${ROOT_DOMAIN}/oauth2/callback
     command:
       - --upstream=static://202
+      - --skip-provider-button=true
     labels:
       - "traefik.enable=true"
       # Dedicated auth host
