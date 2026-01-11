@@ -205,7 +205,7 @@ services:
     environment:
       - LOG_LEVEL=${HUB_LOG_LEVEL:-INFO}
       - API_BASE_URL=http://hub-api-prod:8000
-      - API_KEY=${HUB_API_READ_KEY:-}
+      - API_KEY=${HUB_API_ADMIN_KEY:-}
       - WEB_HOST=0.0.0.0
       - WEB_PORT=8080
       - WEB_ADMIN_ENABLED=true
@@ -331,7 +331,7 @@ services:
     environment:
       - LOG_LEVEL=${HUB_LOG_LEVEL:-INFO}
       - API_BASE_URL=http://hub-api-stg:8000
-      - API_KEY=${HUB_API_READ_KEY:-}
+      - API_KEY=${HUB_API_ADMIN_KEY:-}
       - WEB_HOST=0.0.0.0
       - WEB_PORT=8080
       - WEB_ADMIN_ENABLED=true
