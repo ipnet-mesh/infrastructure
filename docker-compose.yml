@@ -208,6 +208,7 @@ services:
       - API_KEY=${HUB_API_READ_KEY:-}
       - WEB_HOST=0.0.0.0
       - WEB_PORT=8080
+      - WEB_ADMIN_ENABLED=true
       - NETWORK_NAME=${HUB_NETWORK_NAME:-MeshCore Network}
       - NETWORK_CITY=${HUB_NETWORK_CITY:-}
       - NETWORK_COUNTRY=${HUB_NETWORK_COUNTRY:-}
@@ -333,6 +334,7 @@ services:
       - API_KEY=${HUB_API_READ_KEY:-}
       - WEB_HOST=0.0.0.0
       - WEB_PORT=8080
+      - WEB_ADMIN_ENABLED=true
       - NETWORK_NAME=${HUB_NETWORK_NAME:-MeshCore Network}
       - NETWORK_CITY=${HUB_NETWORK_CITY:-}
       - NETWORK_COUNTRY=${HUB_NETWORK_COUNTRY:-}
