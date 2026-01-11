@@ -239,18 +239,18 @@ services:
       - DATA_HOME=/data
     command: ["db", "upgrade"]
 
-  hub-seed-prod:
-    image: ghcr.io/ipnet-mesh/meshcore-hub:latest
-    container_name: hub-seed-prod
-    restart: on-failure
-    volumes:
-      - ./data/hub/prod:/data
-      - ${HUB_SEED_HOME}:/seed:ro
-    environment:
-      - LOG_LEVEL=${HUB_LOG_LEVEL:-INFO}
-      - DATA_HOME=/data
-      - SEED_HOME=/seed
-    command: ["collector", "seed"]
+  # hub-seed-prod:
+  #   image: ghcr.io/ipnet-mesh/meshcore-hub:latest
+  #   container_name: hub-seed-prod
+  #   restart: on-failure
+  #   volumes:
+  #     - ./data/hub/prod:/data
+  #     - ${HUB_SEED_HOME}:/seed:ro
+  #   environment:
+  #     - LOG_LEVEL=${HUB_LOG_LEVEL:-INFO}
+  #     - DATA_HOME=/data
+  #     - SEED_HOME=/seed
+  #   command: ["collector", "seed"]
 
   # === MESHCORE HUB: STAGING ===
 
@@ -365,18 +365,18 @@ services:
       - DATA_HOME=/data
     command: ["db", "upgrade"]
 
-  hub-seed-stg:
-    image: ghcr.io/ipnet-mesh/meshcore-hub:main
-    container_name: hub-seed-stg
-    restart: on-failure
-    volumes:
-      - ./data/hub/stg:/data
-      - ${HUB_SEED_HOME}:/seed:ro
-    environment:
-      - LOG_LEVEL=${HUB_LOG_LEVEL:-INFO}
-      - DATA_HOME=/data
-      - SEED_HOME=/seed
-    command: ["collector", "seed"]
+  # hub-seed-stg:
+  #   image: ghcr.io/ipnet-mesh/meshcore-hub:main
+  #   container_name: hub-seed-stg
+  #   restart: on-failure
+  #   volumes:
+  #     - ./data/hub/stg:/data
+  #     - ${HUB_SEED_HOME}:/seed:ro
+  #   environment:
+  #     - LOG_LEVEL=${HUB_LOG_LEVEL:-INFO}
+  #     - DATA_HOME=/data
+  #     - SEED_HOME=/seed
+  #   command: ["collector", "seed"]
 
   # === MQTT BROKER ===
   
