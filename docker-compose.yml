@@ -50,6 +50,8 @@ services:
     restart: unless-stopped
     networks:
       - proxy
+    volumes:
+      - ./config/oauth2-proxy/templates:/templates:ro
     environment:
       - OAUTH2_PROXY_PROVIDER=github
       - OAUTH2_PROXY_CLIENT_ID=${OAUTH2_PROXY_CLIENT_ID}
@@ -68,6 +70,7 @@ services:
       - OAUTH2_PROXY_SKIP_AUTH_REGEX=^/($|[^a]|a[^/])
     command:
       - --upstream=http://hub-web-prod:8080
+      - --custom-templates-dir=/templates
     labels:
       - "traefik.enable=true"
       # All routes (auth skipped for non-/admin via SKIP_AUTH_REGEX)
@@ -92,6 +95,8 @@ services:
     restart: unless-stopped
     networks:
       - proxy
+    volumes:
+      - ./config/oauth2-proxy/templates:/templates:ro
     environment:
       - OAUTH2_PROXY_PROVIDER=github
       - OAUTH2_PROXY_CLIENT_ID=${OAUTH2_PROXY_CLIENT_ID}
@@ -110,6 +115,7 @@ services:
       - OAUTH2_PROXY_SKIP_AUTH_REGEX=^/($|[^a]|a[^/])
     command:
       - --upstream=http://hub-web-stg:8080
+      - --custom-templates-dir=/templates
     labels:
       - "traefik.enable=true"
       # All routes (auth skipped for non-/admin via SKIP_AUTH_REGEX)
