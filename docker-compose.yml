@@ -65,15 +65,18 @@ services:
       - OAUTH2_PROXY_HTTP_ADDRESS=0.0.0.0:4180
       - OAUTH2_PROXY_REVERSE_PROXY=true
       - OAUTH2_PROXY_SKIP_PROVIDER_BUTTON=true
+      - OAUTH2_PROXY_SKIP_AUTH_REGEX=^/($|[^a]|a[^/])
     command:
       - --upstream=http://hub-web-prod:8080
     labels:
       - "traefik.enable=true"
-      # /admin routes
-      - "traefik.http.routers.oauth2-proxy-prod.rule=(Host(`${ROOT_DOMAIN}`) || HostRegexp(`^.+\\.${ROOT_DOMAIN}$`)) && PathPrefix(`/admin`)"
-      - "traefik.http.routers.oauth2-proxy-prod.priority=20"
+      # All routes (auth skipped for non-/admin via SKIP_AUTH_REGEX)
+      - "traefik.http.routers.oauth2-proxy-prod.rule=Host(`${ROOT_DOMAIN}`) || HostRegexp(`^.+\\.${ROOT_DOMAIN}$`)"
+      - "traefik.http.routers.oauth2-proxy-prod.priority=10"
       - "traefik.http.routers.oauth2-proxy-prod.entrypoints=websecure"
       - "traefik.http.routers.oauth2-proxy-prod.tls.certresolver=default"
+      - "traefik.http.routers.oauth2-proxy-prod.tls.domains[0].main=${ROOT_DOMAIN}"
+      - "traefik.http.routers.oauth2-proxy-prod.tls.domains[0].sans=*.${ROOT_DOMAIN}"
       # /oauth2 routes (for callback)
       - "traefik.http.routers.oauth2-proxy-prod-auth.rule=(Host(`${ROOT_DOMAIN}`) || HostRegexp(`^.+\\.${ROOT_DOMAIN}$`)) && PathPrefix(`/oauth2`)"
       - "traefik.http.routers.oauth2-proxy-prod-auth.priority=100"
@@ -104,15 +107,18 @@ services:
       - OAUTH2_PROXY_HTTP_ADDRESS=0.0.0.0:4180
       - OAUTH2_PROXY_REVERSE_PROXY=true
       - OAUTH2_PROXY_SKIP_PROVIDER_BUTTON=true
+      - OAUTH2_PROXY_SKIP_AUTH_REGEX=^/($|[^a]|a[^/])
     command:
       - --upstream=http://hub-web-stg:8080
     labels:
       - "traefik.enable=true"
-      # /admin routes
-      - "traefik.http.routers.oauth2-proxy-stg.rule=(Host(`beta.${ROOT_DOMAIN}`) || HostRegexp(`^.+\\.beta\\.${ROOT_DOMAIN}$`)) && PathPrefix(`/admin`)"
-      - "traefik.http.routers.oauth2-proxy-stg.priority=60"
+      # All routes (auth skipped for non-/admin via SKIP_AUTH_REGEX)
+      - "traefik.http.routers.oauth2-proxy-stg.rule=Host(`beta.${ROOT_DOMAIN}`) || HostRegexp(`^.+\\.beta\\.${ROOT_DOMAIN}$`)"
+      - "traefik.http.routers.oauth2-proxy-stg.priority=50"
       - "traefik.http.routers.oauth2-proxy-stg.entrypoints=websecure"
       - "traefik.http.routers.oauth2-proxy-stg.tls.certresolver=default"
+      - "traefik.http.routers.oauth2-proxy-stg.tls.domains[0].main=beta.${ROOT_DOMAIN}"
+      - "traefik.http.routers.oauth2-proxy-stg.tls.domains[0].sans=*.beta.${ROOT_DOMAIN}"
       # /oauth2 routes (for auth flow on stg domain)
       - "traefik.http.routers.oauth2-proxy-stg-auth.rule=(Host(`beta.${ROOT_DOMAIN}`) || HostRegexp(`^.+\\.beta\\.${ROOT_DOMAIN}$`)) && PathPrefix(`/oauth2`)"
       - "traefik.http.routers.oauth2-proxy-stg-auth.priority=100"
@@ -218,14 +224,8 @@ services:
       retries: 3
       start_period: 10s
     labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.hub-web-prod.rule=Host(`${ROOT_DOMAIN}`) || HostRegexp(`^.+\\.${ROOT_DOMAIN}$`)"
-      - "traefik.http.routers.hub-web-prod.priority=10"
-      - "traefik.http.routers.hub-web-prod.entrypoints=websecure"
-      - "traefik.http.routers.hub-web-prod.tls.certresolver=default"
-      - "traefik.http.routers.hub-web-prod.tls.domains[0].main=${ROOT_DOMAIN}"
-      - "traefik.http.routers.hub-web-prod.tls.domains[0].sans=*.${ROOT_DOMAIN}"
-      - "traefik.http.services.hub-web-prod.loadbalancer.server.port=8080"
+      # Traffic routed via oauth2-proxy-prod upstream
+      - "traefik.enable=false"
 
   hub-migrate-prod:
     image: ghcr.io/ipnet-mesh/meshcore-hub:latest
@@ -349,15 +349,8 @@ services:
       retries: 3
       start_period: 10s
     labels:
-      - "traefik.enable=true"
-      # Public routes
-      - "traefik.http.routers.hub-web-stg.rule=Host(`beta.${ROOT_DOMAIN}`) || HostRegexp(`^.+\\.beta\\.${ROOT_DOMAIN}$`)"
-      - "traefik.http.routers.hub-web-stg.priority=50"
-      - "traefik.http.routers.hub-web-stg.entrypoints=websecure"
-      - "traefik.http.routers.hub-web-stg.tls.certresolver=default"
-      - "traefik.http.routers.hub-web-stg.tls.domains[0].main=beta.${ROOT_DOMAIN}"
-      - "traefik.http.routers.hub-web-stg.tls.domains[0].sans=*.beta.${ROOT_DOMAIN}"
-      - "traefik.http.services.hub-web-stg.loadbalancer.server.port=8080"
+      # Traffic routed via oauth2-proxy-stg upstream
+      - "traefik.enable=false"
 
   hub-migrate-stg:
     image: ghcr.io/ipnet-mesh/meshcore-hub:main
