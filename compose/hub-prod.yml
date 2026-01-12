@@ -1,0 +1,178 @@
+# MeshCore Hub - Production Environment
+# Includes OAuth2 Proxy for authentication
+
+services:
+  # === OAUTH2 PROXY (Production) ===
+
+  oauth2-proxy-prod:
+    image: quay.io/oauth2-proxy/oauth2-proxy:v7.6.0
+    container_name: oauth2-proxy-prod
+    restart: unless-stopped
+    networks:
+      - proxy
+    volumes:
+      - ../config/oauth2-proxy/templates:/templates:ro
+    environment:
+      - OAUTH2_PROXY_PROVIDER=github
+      - OAUTH2_PROXY_CLIENT_ID=${OAUTH2_PROXY_CLIENT_ID}
+      - OAUTH2_PROXY_CLIENT_SECRET=${OAUTH2_PROXY_CLIENT_SECRET}
+      - OAUTH2_PROXY_COOKIE_SECRET=${OAUTH2_PROXY_COOKIE_SECRET}
+      - OAUTH2_PROXY_COOKIE_SECURE=true
+      - OAUTH2_PROXY_COOKIE_NAME=_oauth2_proxy
+      - OAUTH2_PROXY_COOKIE_DOMAIN=.${ROOT_DOMAIN}
+      - OAUTH2_PROXY_REDIRECT_URL=https://${ROOT_DOMAIN}/oauth2/callback
+      - OAUTH2_PROXY_EMAIL_DOMAINS=*
+      - OAUTH2_PROXY_GITHUB_ORG=${OAUTH2_PROXY_GITHUB_ORG:-}
+      - OAUTH2_PROXY_GITHUB_USERS=${OAUTH2_PROXY_GITHUB_USERS:-}
+      - OAUTH2_PROXY_HTTP_ADDRESS=0.0.0.0:4180
+      - OAUTH2_PROXY_REVERSE_PROXY=true
+      - OAUTH2_PROXY_SKIP_PROVIDER_BUTTON=true
+      - OAUTH2_PROXY_SKIP_AUTH_REGEX=^/($|[^a]|a[^/])
+    command:
+      - --upstream=http://hub-web-prod:8080
+      - --custom-templates-dir=/templates
+    labels:
+      - "traefik.enable=true"
+      # All routes (auth skipped for non-/admin via SKIP_AUTH_REGEX)
+      - "traefik.http.routers.oauth2-proxy-prod.rule=Host(`${ROOT_DOMAIN}`) || HostRegexp(`^.+\\.${ROOT_DOMAIN}$`)"
+      - "traefik.http.routers.oauth2-proxy-prod.priority=10"
+      - "traefik.http.routers.oauth2-proxy-prod.entrypoints=websecure"
+      - "traefik.http.routers.oauth2-proxy-prod.tls.certresolver=default"
+      - "traefik.http.routers.oauth2-proxy-prod.tls.domains[0].main=${ROOT_DOMAIN}"
+      - "traefik.http.routers.oauth2-proxy-prod.tls.domains[0].sans=*.${ROOT_DOMAIN}"
+      # /oauth2 routes (for callback)
+      - "traefik.http.routers.oauth2-proxy-prod-auth.rule=(Host(`${ROOT_DOMAIN}`) || HostRegexp(`^.+\\.${ROOT_DOMAIN}$`)) && PathPrefix(`/oauth2`)"
+      - "traefik.http.routers.oauth2-proxy-prod-auth.priority=100"
+      - "traefik.http.routers.oauth2-proxy-prod-auth.entrypoints=websecure"
+      - "traefik.http.routers.oauth2-proxy-prod-auth.tls.certresolver=default"
+      - "traefik.http.services.oauth2-proxy-prod.loadbalancer.server.port=4180"
+
+  # === HUB SERVICES ===
+
+  hub-collector-prod:
+    image: ghcr.io/ipnet-mesh/meshcore-hub:latest
+    container_name: hub-collector-prod
+    restart: unless-stopped
+    networks:
+      - proxy
+    volumes:
+      - ../data/hub/prod:/data
+      - ${HUB_SEED_HOME}:/seed
+    environment:
+      - LOG_LEVEL=${HUB_LOG_LEVEL:-INFO}
+      - MQTT_HOST=mosquitto
+      - MQTT_PORT=1883
+      - MQTT_USERNAME=${MQTT_USERNAME:-}
+      - MQTT_PASSWORD=${MQTT_PASSWORD:-}
+      - MQTT_PREFIX=meshcore
+      - DATA_HOME=/data
+      - SEED_HOME=/seed
+      - NODE_CLEANUP_DAYS=${HUB_NODE_CLEANUP_DAYS}
+    command: ["collector"]
+    healthcheck:
+      test: ["CMD", "meshcore-hub", "health", "collector"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  hub-api-prod:
+    image: ghcr.io/ipnet-mesh/meshcore-hub:latest
+    container_name: hub-api-prod
+    restart: unless-stopped
+    networks:
+      - proxy
+    depends_on:
+      hub-collector-prod:
+        condition: service_started
+    volumes:
+      - ../data/hub/prod:/data
+    environment:
+      - LOG_LEVEL=${HUB_LOG_LEVEL:-INFO}
+      - MQTT_HOST=mosquitto
+      - MQTT_PORT=1883
+      - MQTT_USERNAME=${MQTT_USERNAME:-}
+      - MQTT_PASSWORD=${MQTT_PASSWORD:-}
+      - MQTT_PREFIX=${MQTT_PREFIX:-meshcore}
+      - DATA_HOME=/data
+      - API_HOST=0.0.0.0
+      - API_PORT=8000
+      - API_READ_KEY=${HUB_API_READ_KEY:-}
+      - API_ADMIN_KEY=${HUB_API_ADMIN_KEY:-}
+    command: ["api"]
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.hub-api-prod.rule=Host(`api.${ROOT_DOMAIN}`)"
+      - "traefik.http.routers.hub-api-prod.priority=100"
+      - "traefik.http.routers.hub-api-prod.entrypoints=websecure"
+      - "traefik.http.routers.hub-api-prod.tls.certresolver=default"
+      - "traefik.http.services.hub-api-prod.loadbalancer.server.port=8000"
+
+  hub-web-prod:
+    image: ghcr.io/ipnet-mesh/meshcore-hub:latest
+    container_name: hub-web-prod
+    restart: unless-stopped
+    networks:
+      - proxy
+    depends_on:
+      hub-api-prod:
+        condition: service_healthy
+    environment:
+      - LOG_LEVEL=${HUB_LOG_LEVEL:-INFO}
+      - API_BASE_URL=http://hub-api-prod:8000
+      - API_KEY=${HUB_API_ADMIN_KEY:-}
+      - WEB_HOST=0.0.0.0
+      - WEB_PORT=8080
+      - WEB_ADMIN_ENABLED=true
+      - NETWORK_NAME=${HUB_NETWORK_NAME:-MeshCore Network}
+      - NETWORK_CITY=${HUB_NETWORK_CITY:-}
+      - NETWORK_COUNTRY=${HUB_NETWORK_COUNTRY:-}
+      - NETWORK_RADIO_CONFIG=${HUB_NETWORK_RADIO_CONFIG:-}
+      - NETWORK_CONTACT_EMAIL=${HUB_NETWORK_CONTACT_EMAIL:-}
+      - NETWORK_CONTACT_DISCORD=${HUB_NETWORK_CONTACT_DISCORD:-}
+      - NETWORK_CONTACT_GITHUB=${HUB_NETWORK_CONTACT_GITHUB:-}
+      - NETWORK_WELCOME_TEXT=${HUB_NETWORK_WELCOME_TEXT:-}
+    command: ["web"]
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8080/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    labels:
+      # Traffic routed via oauth2-proxy-prod upstream
+      - "traefik.enable=false"
+
+  hub-migrate-prod:
+    image: ghcr.io/ipnet-mesh/meshcore-hub:latest
+    container_name: hub-migrate-prod
+    restart: on-failure
+    volumes:
+      - ../data/hub/prod:/data
+    environment:
+      - LOG_LEVEL=${HUB_LOG_LEVEL:-INFO}
+      - DATA_HOME=/data
+    command: ["db", "upgrade"]
+
+  # hub-seed-prod:
+  #   image: ghcr.io/ipnet-mesh/meshcore-hub:latest
+  #   container_name: hub-seed-prod
+  #   restart: on-failure
+  #   volumes:
+  #     - ../data/hub/prod:/data
+  #     - ${HUB_SEED_HOME}:/seed:ro
+  #   environment:
+  #     - LOG_LEVEL=${HUB_LOG_LEVEL:-INFO}
+  #     - DATA_HOME=/data
+  #     - SEED_HOME=/seed
+  #   command: ["collector", "seed"]
+
+networks:
+  proxy:
+    external: true

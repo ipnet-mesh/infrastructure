@@ -1,0 +1,37 @@
+# Eclipse Mosquitto MQTT Broker
+# Provides MQTT messaging with TLS and WebSocket support
+
+services:
+  mosquitto:
+    image: eclipse-mosquitto:2.0
+    container_name: mosquitto
+    restart: unless-stopped
+    networks:
+      - proxy
+    volumes:
+      - ../config/mosquitto/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
+      - ../config/mosquitto/acl.conf:/mosquitto/config/acl.conf:ro
+      - ../config/mosquitto/passwd:/mosquitto/config/passwd:ro
+      # - ../config/bridges:/mosquitto/config/bridges:ro
+      - mosquitto-data:/mosquitto/data
+    labels:
+      - "traefik.enable=true"
+      # MQTT over TLS (8883) - Traefik terminates TLS and forwards to plain MQTT
+      - "traefik.tcp.routers.mqtt-tls.rule=HostSNI(`mqtt.${ROOT_DOMAIN}`)"
+      - "traefik.tcp.routers.mqtt-tls.entrypoints=mqtt"
+      - "traefik.tcp.routers.mqtt-tls.tls.certresolver=default"
+      - "traefik.tcp.routers.mqtt-tls.service=mqtt-tls"
+      - "traefik.tcp.services.mqtt-tls.loadbalancer.server.port=1883"
+      # MQTT WebSockets (WSS)
+      - "traefik.http.routers.mqtt-ws.rule=Host(`mqtt.${ROOT_DOMAIN}`) && Path(`/mqtt`)"
+      - "traefik.http.routers.mqtt-ws.priority=100"
+      - "traefik.http.routers.mqtt-ws.entrypoints=websecure"
+      - "traefik.http.routers.mqtt-ws.tls.certresolver=default"
+      - "traefik.http.services.mqtt-ws.loadbalancer.server.port=8080"
+
+networks:
+  proxy:
+    external: true
+
+volumes:
+  mosquitto-data:
