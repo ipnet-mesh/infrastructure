@@ -1,0 +1,51 @@
+# Traefik Reverse Proxy
+# Handles HTTPS termination, routing, and certificate management
+
+services:
+  traefik:
+    image: traefik:v3.6
+    container_name: traefik
+    restart: unless-stopped
+    networks:
+      - proxy
+    ports:
+      - "80:80"
+      - "443:443"
+      - "8883:8883"  # MQTT over TLS
+    environment:
+      - CF_API_EMAIL=${DNS_API_EMAIL}
+      - CF_DNS_API_TOKEN=${DNS_API_TOKEN}
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ../config/traefik/config.yml:/etc/traefik/static/config.yml:ro
+      - acme:/acme
+    command:
+      - --api.dashboard=true
+      - --api.insecure=true
+      - --providers.docker=true
+      - --providers.docker.exposedbydefault=false
+      - --providers.file.directory=/etc/traefik/static
+      - --providers.file.watch=true
+      - --entrypoints.web.address=:80
+      - --entrypoints.websecure.address=:443
+      - --entrypoints.mqtt.address=:8883
+      - --certificatesresolvers.default.acme.dnschallenge=true
+      - --certificatesresolvers.default.acme.dnschallenge.provider=${DNS_PROVIDER}
+      - --certificatesresolvers.default.acme.email=${ACME_EMAIL}
+      - --certificatesresolvers.default.acme.storage=/acme/acme.json
+      - --entrypoints.web.http.redirections.entrypoint.to=websecure
+      - --entrypoints.web.http.redirections.entrypoint.scheme=https
+      - --log.level=DEBUG
+      - --log.format=common
+      - --accesslog=true
+      - --accesslog.format=common
+    labels:
+      - "traefik.enable=false"
+
+networks:
+  proxy:
+    external: true
+
+volumes:
+  acme:
+    external: true
