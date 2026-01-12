@@ -65,6 +65,7 @@ services:
       - AUTHENTIK_SECRET_KEY=${AUTHENTIK_SECRET_KEY}
       - AUTHENTIK_ERROR_REPORTING__ENABLED=false
       - AUTHENTIK_COOKIE_DOMAIN=.${ROOT_DOMAIN}
+      - AUTHENTIK_BOOTSTRAP_PASSWORD=${AUTHENTIK_BOOTSTRAP_PASSWORD}
     volumes:
       - authentik-media:/media
       - authentik-templates:/templates
