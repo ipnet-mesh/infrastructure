@@ -1,52 +1,7 @@
 # MeshCore Hub - Staging Environment
-# Includes OAuth2 Proxy for authentication
+# Uses Authentik forward auth for authentication
 
 services:
-  # === OAUTH2 PROXY (Staging) ===
-
-  oauth2-proxy-stg:
-    image: quay.io/oauth2-proxy/oauth2-proxy:v7.6.0
-    container_name: oauth2-proxy-stg
-    restart: unless-stopped
-    networks:
-      - proxy
-    volumes:
-      - ../config/oauth2-proxy/templates:/templates:ro
-    environment:
-      - OAUTH2_PROXY_PROVIDER=github
-      - OAUTH2_PROXY_CLIENT_ID=${OAUTH2_PROXY_CLIENT_ID}
-      - OAUTH2_PROXY_CLIENT_SECRET=${OAUTH2_PROXY_CLIENT_SECRET}
-      - OAUTH2_PROXY_COOKIE_SECRET=${OAUTH2_PROXY_COOKIE_SECRET}
-      - OAUTH2_PROXY_COOKIE_SECURE=true
-      - OAUTH2_PROXY_COOKIE_NAME=_oauth2_proxy
-      - OAUTH2_PROXY_COOKIE_DOMAIN=.${ROOT_DOMAIN}
-      - OAUTH2_PROXY_REDIRECT_URL=https://beta.${ROOT_DOMAIN}/oauth2/callback
-      - OAUTH2_PROXY_EMAIL_DOMAINS=*
-      - OAUTH2_PROXY_GITHUB_ORG=${OAUTH2_PROXY_GITHUB_ORG:-}
-      - OAUTH2_PROXY_GITHUB_USERS=${OAUTH2_PROXY_GITHUB_USERS:-}
-      - OAUTH2_PROXY_HTTP_ADDRESS=0.0.0.0:4180
-      - OAUTH2_PROXY_REVERSE_PROXY=true
-      - OAUTH2_PROXY_SKIP_PROVIDER_BUTTON=true
-      - OAUTH2_PROXY_SKIP_AUTH_REGEX=^/($|[^a]|a[^/])
-    command:
-      - --upstream=http://hub-web-stg:8080
-      - --custom-templates-dir=/templates
-    labels:
-      - "traefik.enable=true"
-      # All routes (auth skipped for non-/admin via SKIP_AUTH_REGEX)
-      - "traefik.http.routers.oauth2-proxy-stg.rule=Host(`beta.${ROOT_DOMAIN}`) || HostRegexp(`^.+\\.beta\\.${ROOT_DOMAIN}$`)"
-      - "traefik.http.routers.oauth2-proxy-stg.priority=50"
-      - "traefik.http.routers.oauth2-proxy-stg.entrypoints=websecure"
-      - "traefik.http.routers.oauth2-proxy-stg.tls.certresolver=default"
-      - "traefik.http.routers.oauth2-proxy-stg.tls.domains[0].main=beta.${ROOT_DOMAIN}"
-      - "traefik.http.routers.oauth2-proxy-stg.tls.domains[0].sans=*.beta.${ROOT_DOMAIN}"
-      # /oauth2 routes (for auth flow on stg domain)
-      - "traefik.http.routers.oauth2-proxy-stg-auth.rule=(Host(`beta.${ROOT_DOMAIN}`) || HostRegexp(`^.+\\.beta\\.${ROOT_DOMAIN}$`)) && PathPrefix(`/oauth2`)"
-      - "traefik.http.routers.oauth2-proxy-stg-auth.priority=100"
-      - "traefik.http.routers.oauth2-proxy-stg-auth.entrypoints=websecure"
-      - "traefik.http.routers.oauth2-proxy-stg-auth.tls.certresolver=default"
-      - "traefik.http.services.oauth2-proxy-stg.loadbalancer.server.port=4180"
-
   # === HUB SERVICES ===
 
   hub-collector-stg:
@@ -146,8 +101,22 @@ services:
       retries: 3
       start_period: 10s
     labels:
-      # Traffic routed via oauth2-proxy-stg upstream
-      - "traefik.enable=false"
+      - "traefik.enable=true"
+      # Main staging website (no auth required)
+      - "traefik.http.routers.hub-web-stg.rule=Host(`beta.${ROOT_DOMAIN}`) || HostRegexp(`^.+\\.beta\\.${ROOT_DOMAIN}$`)"
+      - "traefik.http.routers.hub-web-stg.priority=50"
+      - "traefik.http.routers.hub-web-stg.entrypoints=websecure"
+      - "traefik.http.routers.hub-web-stg.tls.certresolver=default"
+      - "traefik.http.routers.hub-web-stg.tls.domains[0].main=beta.${ROOT_DOMAIN}"
+      - "traefik.http.routers.hub-web-stg.tls.domains[0].sans=*.beta.${ROOT_DOMAIN}"
+      - "traefik.http.services.hub-web-stg.loadbalancer.server.port=8080"
+      # Admin routes (auth required via Authentik)
+      - "traefik.http.routers.hub-web-stg-admin.rule=(Host(`beta.${ROOT_DOMAIN}`) || HostRegexp(`^.+\\.beta\\.${ROOT_DOMAIN}$`)) && PathPrefix(`/admin`)"
+      - "traefik.http.routers.hub-web-stg-admin.priority=60"
+      - "traefik.http.routers.hub-web-stg-admin.entrypoints=websecure"
+      - "traefik.http.routers.hub-web-stg-admin.tls.certresolver=default"
+      - "traefik.http.routers.hub-web-stg-admin.middlewares=authentik-auth@file"
+      - "traefik.http.routers.hub-web-stg-admin.service=hub-web-stg"
 
   hub-migrate-stg:
     image: ghcr.io/ipnet-mesh/meshcore-hub:main

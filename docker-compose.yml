@@ -3,6 +3,7 @@
 
 include:
   - compose/traefik.yml
+  - compose/authentik.yml
   - compose/hub-prod.yml
   - compose/hub-stg.yml
   - compose/mosquitto.yml
