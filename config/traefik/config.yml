@@ -25,7 +25,7 @@ http:
       tls:
         certResolver: default
       service: robots-txt-stg
-      priority: 50
+      priority: 51
 
   services:
     robots-txt-prod:
