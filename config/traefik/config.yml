@@ -11,7 +11,7 @@ http:
 
   routers:
     robots-txt-prod:
-      rule: "Host(`ipnt.uk`) && Path(`/robots.txt`)"
+      rule: "(Host(`www.ipnt.uk`) || Host(`ipnt.uk`)) && Path(`/robots.txt`)"
       entryPoints:
         - websecure
       tls:
