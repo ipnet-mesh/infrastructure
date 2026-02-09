@@ -127,6 +127,7 @@ services:
       - ../content:/content
     environment:
       - LOG_LEVEL=${HUB_LOG_LEVEL:-INFO}
+      - TZ=${HUB_TZ}
       - API_BASE_URL=http://hub-api-prod:8000
       - API_KEY=${HUB_API_ADMIN_KEY:-}
       - WEB_HOST=0.0.0.0
@@ -139,6 +140,7 @@ services:
       - NETWORK_CONTACT_EMAIL=${HUB_NETWORK_CONTACT_EMAIL:-}
       - NETWORK_CONTACT_DISCORD=${HUB_NETWORK_CONTACT_DISCORD:-}
       - NETWORK_CONTACT_GITHUB=${HUB_NETWORK_CONTACT_GITHUB:-}
+      - NETWORK_CONTACT_YOUTUBE=${HUB_NETWORK_CONTACT_YOUTUBE:-}
       - NETWORK_WELCOME_TEXT=${HUB_NETWORK_WELCOME_TEXT:-}
       - CONTENT_HOME=/content
     command: ["web"]
