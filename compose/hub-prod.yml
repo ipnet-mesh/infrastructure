@@ -193,6 +193,7 @@ services:
       - ../config/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - ../config/prometheus/rules:/etc/prometheus/rules:ro
       - ../data/prometheus:/prometheus
+    user: root
     environment:
       - HUB_API_READ_KEY=${HUB_API_READ_KEY:-}
     entrypoint: /bin/sh
