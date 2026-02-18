@@ -178,6 +178,62 @@ services:
   #     - SEED_HOME=/seed
   #   command: ["collector", "seed"]
 
+  # === MONITORING ===
+
+  prometheus-prod:
+    image: prom/prometheus:latest
+    container_name: prometheus-prod
+    restart: unless-stopped
+    networks:
+      - proxy
+    depends_on:
+      hub-api-prod:
+        condition: service_healthy
+    volumes:
+      - ../config/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ../config/prometheus/rules:/etc/prometheus/rules:ro
+      - ../data/prometheus:/prometheus
+    environment:
+      - HUB_API_READ_KEY=${HUB_API_READ_KEY:-}
+    entrypoint: /bin/sh
+    command:
+      - -c
+      - |
+        echo "$$HUB_API_READ_KEY" > /etc/prometheus/api_read_key
+        exec /bin/prometheus \
+          --config.file=/etc/prometheus/prometheus.yml \
+          --storage.tsdb.path=/prometheus \
+          --web.external-url=https://metrics.${ROOT_DOMAIN}
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.prometheus-prod.rule=Host(`metrics.${ROOT_DOMAIN}`)"
+      - "traefik.http.routers.prometheus-prod.priority=100"
+      - "traefik.http.routers.prometheus-prod.entrypoints=websecure"
+      - "traefik.http.routers.prometheus-prod.tls.certresolver=default"
+      - "traefik.http.routers.prometheus-prod.middlewares=oauth2-forward-auth"
+      - "traefik.http.services.prometheus-prod.loadbalancer.server.port=9090"
+      # ForwardAuth middleware (shared with alertmanager-prod)
+      - "traefik.http.middlewares.oauth2-forward-auth.forwardauth.address=http://oauth2-proxy-prod:4180/oauth2/auth"
+      - "traefik.http.middlewares.oauth2-forward-auth.forwardauth.trustForwardHeader=true"
+      - "traefik.http.middlewares.oauth2-forward-auth.forwardauth.authResponseHeaders=X-Auth-Request-User,X-Auth-Request-Email"
+
+  alertmanager-prod:
+    image: prom/alertmanager:latest
+    container_name: alertmanager-prod
+    restart: unless-stopped
+    networks:
+      - proxy
+    volumes:
+      - ../config/alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.alertmanager-prod.rule=Host(`alerts.${ROOT_DOMAIN}`)"
+      - "traefik.http.routers.alertmanager-prod.priority=100"
+      - "traefik.http.routers.alertmanager-prod.entrypoints=websecure"
+      - "traefik.http.routers.alertmanager-prod.tls.certresolver=default"
+      - "traefik.http.routers.alertmanager-prod.middlewares=oauth2-forward-auth"
+      - "traefik.http.services.alertmanager-prod.loadbalancer.server.port=9093"
+
 networks:
   proxy:
     external: true
