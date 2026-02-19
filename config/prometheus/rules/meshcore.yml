@@ -2,7 +2,7 @@ groups:
   - name: meshcore
     rules:
       - alert: NodeNotSeen
-        expr: time() - meshcore_node_last_seen_timestamp_seconds > 48 * 3600
+        expr: time() - meshcore_node_last_seen_timestamp_seconds{role="infra"} > 48 * 3600
         for: 5m
         labels:
           severity: warning
