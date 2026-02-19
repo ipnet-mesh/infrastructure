@@ -247,10 +247,17 @@ services:
     networks:
       - proxy
     volumes:
-      - ../config/alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+      - ../config/alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.tmpl.yml:ro
+    environment:
+      - DISCORD_WEBHOOK_URL=${DISCORD_WEBHOOK_URL:-}
+    entrypoint: /bin/sh
     command:
-      - --config.file=/etc/alertmanager/alertmanager.yml
-      - --web.external-url=https://monitoring.${ROOT_DOMAIN}/alertmanager/
+      - -c
+      - |
+        sed "s|DISCORD_WEBHOOK_URL|$$DISCORD_WEBHOOK_URL|g" /etc/alertmanager/alertmanager.tmpl.yml > /etc/alertmanager/alertmanager.yml
+        exec /bin/alertmanager \
+          --config.file=/etc/alertmanager/alertmanager.yml \
+          --web.external-url=https://monitoring.${ROOT_DOMAIN}/alertmanager/
     labels:
       - "traefik.enable=false"
 

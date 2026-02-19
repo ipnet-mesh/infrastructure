@@ -1,9 +1,15 @@
 route:
-  receiver: default
+  receiver: discord
   group_by: ['alertname']
   group_wait: 30s
   group_interval: 5m
   repeat_interval: 4h
 
 receivers:
-  - name: default
+  - name: discord
+    slack_configs:
+      - api_url: 'DISCORD_WEBHOOK_URL/slack'
+        channel: '#alerts'
+        title: '{{ .GroupLabels.alertname }}'
+        text: '{{ range .Alerts }}{{ .Annotations.summary }}{{ "\n" }}{{ .Annotations.description }}{{ "\n" }}{{ end }}'
+        send_resolved: true
