@@ -257,8 +257,7 @@ services:
         sed "s|DISCORD_WEBHOOK_URL|$$DISCORD_WEBHOOK_URL|g" /etc/alertmanager/alertmanager.tmpl.yml > /etc/alertmanager/alertmanager.yml
         exec /bin/alertmanager \
           --config.file=/etc/alertmanager/alertmanager.yml \
-          --web.external-url=https://monitoring.${ROOT_DOMAIN}/alertmanager/ \
-          --web.route-prefix=/
+          --web.external-url=https://monitoring.${ROOT_DOMAIN}/alertmanager/
     labels:
       - "traefik.enable=false"
 
