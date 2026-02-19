@@ -249,6 +249,7 @@ services:
     volumes:
       - ../config/alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
     command:
+      - --config.file=/etc/alertmanager/alertmanager.yml
       - --web.external-url=https://monitoring.${ROOT_DOMAIN}/alertmanager/
     labels:
       - "traefik.enable=false"
