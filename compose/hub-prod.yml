@@ -180,6 +180,68 @@ services:
 
   # === MONITORING ===
 
+  oauth2-proxy-metrics:
+    image: quay.io/oauth2-proxy/oauth2-proxy:v7.6.0
+    container_name: oauth2-proxy-metrics
+    restart: unless-stopped
+    networks:
+      - proxy
+    environment:
+      - OAUTH2_PROXY_PROVIDER=github
+      - OAUTH2_PROXY_CLIENT_ID=${OAUTH2_PROXY_CLIENT_ID}
+      - OAUTH2_PROXY_CLIENT_SECRET=${OAUTH2_PROXY_CLIENT_SECRET}
+      - OAUTH2_PROXY_COOKIE_SECRET=${OAUTH2_PROXY_COOKIE_SECRET}
+      - OAUTH2_PROXY_COOKIE_SECURE=true
+      - OAUTH2_PROXY_COOKIE_NAME=_oauth2_proxy
+      - OAUTH2_PROXY_COOKIE_DOMAIN=.${ROOT_DOMAIN}
+      - OAUTH2_PROXY_REDIRECT_URL=https://metrics.${ROOT_DOMAIN}/oauth2/callback
+      - OAUTH2_PROXY_EMAIL_DOMAINS=*
+      - OAUTH2_PROXY_GITHUB_ORG=${OAUTH2_PROXY_GITHUB_ORG:-}
+      - OAUTH2_PROXY_GITHUB_USERS=${OAUTH2_PROXY_GITHUB_USERS:-}
+      - OAUTH2_PROXY_HTTP_ADDRESS=0.0.0.0:4180
+      - OAUTH2_PROXY_REVERSE_PROXY=true
+      - OAUTH2_PROXY_SKIP_PROVIDER_BUTTON=true
+    command:
+      - --upstream=http://prometheus-prod:9090
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.oauth2-proxy-metrics.rule=Host(`metrics.${ROOT_DOMAIN}`)"
+      - "traefik.http.routers.oauth2-proxy-metrics.priority=100"
+      - "traefik.http.routers.oauth2-proxy-metrics.entrypoints=websecure"
+      - "traefik.http.routers.oauth2-proxy-metrics.tls.certresolver=default"
+      - "traefik.http.services.oauth2-proxy-metrics.loadbalancer.server.port=4180"
+
+  oauth2-proxy-alerts:
+    image: quay.io/oauth2-proxy/oauth2-proxy:v7.6.0
+    container_name: oauth2-proxy-alerts
+    restart: unless-stopped
+    networks:
+      - proxy
+    environment:
+      - OAUTH2_PROXY_PROVIDER=github
+      - OAUTH2_PROXY_CLIENT_ID=${OAUTH2_PROXY_CLIENT_ID}
+      - OAUTH2_PROXY_CLIENT_SECRET=${OAUTH2_PROXY_CLIENT_SECRET}
+      - OAUTH2_PROXY_COOKIE_SECRET=${OAUTH2_PROXY_COOKIE_SECRET}
+      - OAUTH2_PROXY_COOKIE_SECURE=true
+      - OAUTH2_PROXY_COOKIE_NAME=_oauth2_proxy
+      - OAUTH2_PROXY_COOKIE_DOMAIN=.${ROOT_DOMAIN}
+      - OAUTH2_PROXY_REDIRECT_URL=https://alerts.${ROOT_DOMAIN}/oauth2/callback
+      - OAUTH2_PROXY_EMAIL_DOMAINS=*
+      - OAUTH2_PROXY_GITHUB_ORG=${OAUTH2_PROXY_GITHUB_ORG:-}
+      - OAUTH2_PROXY_GITHUB_USERS=${OAUTH2_PROXY_GITHUB_USERS:-}
+      - OAUTH2_PROXY_HTTP_ADDRESS=0.0.0.0:4180
+      - OAUTH2_PROXY_REVERSE_PROXY=true
+      - OAUTH2_PROXY_SKIP_PROVIDER_BUTTON=true
+    command:
+      - --upstream=http://alertmanager-prod:9093
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.oauth2-proxy-alerts.rule=Host(`alerts.${ROOT_DOMAIN}`)"
+      - "traefik.http.routers.oauth2-proxy-alerts.priority=100"
+      - "traefik.http.routers.oauth2-proxy-alerts.entrypoints=websecure"
+      - "traefik.http.routers.oauth2-proxy-alerts.tls.certresolver=default"
+      - "traefik.http.services.oauth2-proxy-alerts.loadbalancer.server.port=4180"
+
   prometheus-prod:
     image: prom/prometheus:latest
     container_name: prometheus-prod
@@ -206,21 +268,7 @@ services:
           --storage.tsdb.path=/prometheus \
           --web.external-url=https://metrics.${ROOT_DOMAIN}
     labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.prometheus-prod.rule=Host(`metrics.${ROOT_DOMAIN}`)"
-      - "traefik.http.routers.prometheus-prod.priority=100"
-      - "traefik.http.routers.prometheus-prod.entrypoints=websecure"
-      - "traefik.http.routers.prometheus-prod.tls.certresolver=default"
-      - "traefik.http.routers.prometheus-prod.middlewares=oauth2-errors-prometheus,oauth2-forward-auth"
-      - "traefik.http.services.prometheus-prod.loadbalancer.server.port=9090"
-      # ForwardAuth middleware (shared with alertmanager-prod)
-      - "traefik.http.middlewares.oauth2-forward-auth.forwardauth.address=http://oauth2-proxy-prod:4180/oauth2/auth"
-      - "traefik.http.middlewares.oauth2-forward-auth.forwardauth.trustForwardHeader=true"
-      - "traefik.http.middlewares.oauth2-forward-auth.forwardauth.authResponseHeaders=X-Auth-Request-User,X-Auth-Request-Email"
-      # Errors middleware - redirect 401 to OAuth2 sign-in
-      - "traefik.http.middlewares.oauth2-errors-prometheus.errors.status=401"
-      - "traefik.http.middlewares.oauth2-errors-prometheus.errors.service=oauth2-proxy-prod@docker"
-      - "traefik.http.middlewares.oauth2-errors-prometheus.errors.query=/oauth2/sign_in?rd=https://metrics.${ROOT_DOMAIN}"
+      - "traefik.enable=false"
 
   alertmanager-prod:
     image: prom/alertmanager:latest
@@ -231,17 +279,7 @@ services:
     volumes:
       - ../config/alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
     labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.alertmanager-prod.rule=Host(`alerts.${ROOT_DOMAIN}`)"
-      - "traefik.http.routers.alertmanager-prod.priority=100"
-      - "traefik.http.routers.alertmanager-prod.entrypoints=websecure"
-      - "traefik.http.routers.alertmanager-prod.tls.certresolver=default"
-      - "traefik.http.routers.alertmanager-prod.middlewares=oauth2-errors-alertmanager,oauth2-forward-auth"
-      - "traefik.http.services.alertmanager-prod.loadbalancer.server.port=9093"
-      # Errors middleware - redirect 401 to OAuth2 sign-in
-      - "traefik.http.middlewares.oauth2-errors-alertmanager.errors.status=401"
-      - "traefik.http.middlewares.oauth2-errors-alertmanager.errors.service=oauth2-proxy-prod@docker"
-      - "traefik.http.middlewares.oauth2-errors-alertmanager.errors.query=/oauth2/sign_in?rd=https://alerts.${ROOT_DOMAIN}"
+      - "traefik.enable=false"
 
 networks:
   proxy:
