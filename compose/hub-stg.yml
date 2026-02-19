@@ -107,12 +107,7 @@ services:
       retries: 3
       start_period: 10s
     labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.hub-api-stg.rule=Host(`api.beta.${ROOT_DOMAIN}`)"
-      - "traefik.http.routers.hub-api-stg.priority=100"
-      - "traefik.http.routers.hub-api-stg.entrypoints=websecure"
-      - "traefik.http.routers.hub-api-stg.tls.certresolver=default"
-      - "traefik.http.services.hub-api-stg.loadbalancer.server.port=8000"
+      - "traefik.enable=false"
 
   hub-web-stg:
     image: ghcr.io/ipnet-mesh/meshcore-hub:main
