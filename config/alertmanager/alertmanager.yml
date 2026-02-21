@@ -11,5 +11,5 @@ receivers:
       - api_url: 'DISCORD_WEBHOOK_URL/slack'
         channel: '#alerts'
         title: '{{ .GroupLabels.alertname }}'
-        text: '{{ range .Alerts }}{{ .Annotations.summary }}{{ "\n" }}{{ .Annotations.description }}{{ "\n" }}{{ end }}'
+        text: '{{ range .Alerts }}{{ .Annotations.summary }}{{ "\n" }}{{ .Annotations.description }}{{ "\n\n" }}{{ end }}'
         send_resolved: true

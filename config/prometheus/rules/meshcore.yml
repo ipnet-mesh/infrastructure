@@ -7,5 +7,5 @@ groups:
         labels:
           severity: warning
         annotations:
-          summary: "Node {{ $labels.node_name }} not seen for 48+ hours"
-          description: "Node {{ $labels.public_key }} ({{ $labels.adv_type }}) last seen {{ $value | humanizeDuration }} ago."
+          summary: "{{ $labels.node_name }} ({{ printf \"%.8s\" $labels.public_key }})"
+          description: "Last Seen: {{ $value | humanizeDuration }} ago"
