@@ -34,14 +34,16 @@ services:
     labels:
       - "traefik.enable=true"
       # All routes (auth skipped for non-/admin via SKIP_AUTH_REGEX)
-      - "traefik.http.routers.oauth2-proxy-stg.rule=Host(`beta.${ROOT_DOMAIN}`) || HostRegexp(`^.+\\.beta\\.${ROOT_DOMAIN}$`)"
+      - "traefik.http.routers.oauth2-proxy-stg.rule=Host(`beta.${ROOT_DOMAIN}`) || HostRegexp(`^.+\\.beta\\.${ROOT_DOMAIN}$`) || Host(`beta.${ALT_DOMAIN_1}`) || HostRegexp(`^.+\\.beta\\.${ALT_DOMAIN_1}$`)"
       - "traefik.http.routers.oauth2-proxy-stg.priority=50"
       - "traefik.http.routers.oauth2-proxy-stg.entrypoints=websecure"
       - "traefik.http.routers.oauth2-proxy-stg.tls.certresolver=default"
       - "traefik.http.routers.oauth2-proxy-stg.tls.domains[0].main=beta.${ROOT_DOMAIN}"
       - "traefik.http.routers.oauth2-proxy-stg.tls.domains[0].sans=*.beta.${ROOT_DOMAIN}"
+      - "traefik.http.routers.oauth2-proxy-stg.tls.domains[1].main=beta.${ALT_DOMAIN_1}"
+      - "traefik.http.routers.oauth2-proxy-stg.tls.domains[1].sans=*.beta.${ALT_DOMAIN_1}"
       # /oauth2 routes (for auth flow on stg domain)
-      - "traefik.http.routers.oauth2-proxy-stg-auth.rule=(Host(`beta.${ROOT_DOMAIN}`) || HostRegexp(`^.+\\.beta\\.${ROOT_DOMAIN}$`)) && PathPrefix(`/oauth2`)"
+      - "traefik.http.routers.oauth2-proxy-stg-auth.rule=(Host(`beta.${ROOT_DOMAIN}`) || HostRegexp(`^.+\\.beta\\.${ROOT_DOMAIN}$`) || `beta.${ALT_DOMAIN_1}`) || HostRegexp(`^.+\\.beta\\.${ALT_DOMAIN_1}$`)) && PathPrefix(`/oauth2`)"
       - "traefik.http.routers.oauth2-proxy-stg-auth.priority=100"
       - "traefik.http.routers.oauth2-proxy-stg-auth.entrypoints=websecure"
       - "traefik.http.routers.oauth2-proxy-stg-auth.tls.certresolver=default"
@@ -127,7 +129,9 @@ services:
       - API_KEY=${HUB_API_ADMIN_KEY:-}
       - WEB_HOST=0.0.0.0
       - WEB_PORT=8080
-      - WEB_ADMIN_ENABLED=true
+      - WEB_ADMIN_ENABLED=${HUB_WEB_ADMIN_ENABLED:-false}
+      - WEB_LOCALE=${HUB_WEB_LOCALE:-en}
+      - WEB_DATETIME_LOCALE=${HUB_WEB_DATETIME_LOCALE:-en-GB}
       - NETWORK_NAME=${HUB_NETWORK_NAME:-MeshCore Network}
       - NETWORK_CITY=${HUB_NETWORK_CITY:-}
       - NETWORK_COUNTRY=${HUB_NETWORK_COUNTRY:-}
