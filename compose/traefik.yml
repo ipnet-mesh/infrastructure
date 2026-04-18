@@ -7,11 +7,10 @@ services:
     container_name: traefik
     restart: unless-stopped
     networks:
-      - proxy
+      - proxy-net
     ports:
-      - "80:80"
-      - "443:443"
-      - "8883:8883"  # MQTT over TLS
+      - "${TRAEFIK_HTTP_PORT:-80}:80"
+      - "${TRAEFIK_HTTPS_PORT:-443}:443"
     environment:
       - CF_API_EMAIL=${DNS_API_EMAIL}
       - CF_DNS_API_TOKEN=${DNS_API_TOKEN}
@@ -28,14 +27,13 @@ services:
       - --providers.file.watch=true
       - --entrypoints.web.address=:80
       - --entrypoints.websecure.address=:443
-      - --entrypoints.mqtt.address=:8883
       - --certificatesresolvers.default.acme.dnschallenge=true
       - --certificatesresolvers.default.acme.dnschallenge.provider=${DNS_PROVIDER}
       - --certificatesresolvers.default.acme.email=${ACME_EMAIL}
       - --certificatesresolvers.default.acme.storage=/acme/acme.json
       - --entrypoints.web.http.redirections.entrypoint.to=websecure
       - --entrypoints.web.http.redirections.entrypoint.scheme=https
-      - --log.level=DEBUG
+      - --log.level=${TRAEFIK_LOG_LEVEL:-INFO}
       - --log.format=common
       - --accesslog=true
       - --accesslog.format=common
@@ -43,7 +41,7 @@ services:
       - "traefik.enable=false"
 
 networks:
-  proxy:
+  proxy-net:
     external: true
 
 volumes:

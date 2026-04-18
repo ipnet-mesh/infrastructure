@@ -4,82 +4,103 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is the infrastructure repository for IPNet Mesh - a Docker Compose-based infrastructure setup that provides:
-- Traefik reverse proxy with automatic HTTPS via Cloudflare DNS challenges
-- OAuth2 Proxy for GitHub-based authentication on protected routes
-- Eclipse Mosquitto MQTT broker with WebSocket support
-- MeshCore Hub services (API, Web, Collector) for both production and staging environments
+This is the infrastructure repository for IPNet Mesh — a Docker Compose-based setup providing:
+
+- **Traefik** reverse proxy with automatic HTTPS via Cloudflare DNS challenges
+- **MeshCore MQTT Broker** shared across all hub instances
+
+Hub instances (MeshCore Hub) are deployed as separate independent compose stacks, each started from their own directory with wget'd compose files and a local `.env`.
 
 ## Architecture
 
-The infrastructure runs from a single `docker-compose.yml` at the repository root. All services share an external `proxy` network for Traefik routing.
+All services connect to an external `proxy-net` Docker network. Each stack is started independently.
+
+```
+infrastructure/                hub-prod/              hub-stg/
+├── compose/                   ├── docker-compose.*   ├── docker-compose.*
+│   ├── traefik.yml            ├── etc/               ├── etc/
+│   └── mqtt.yml               └── .env               └── .env
+├── config/
+├── content/  ← shared volume
+└── .env
+        │            │                  │
+        └────────────┼──────────────────┘
+               proxy-net (external)
+```
 
 ### Services
 
 - **Traefik**: Reverse proxy and TLS termination
   - Automatic HTTPS via Let's Encrypt with Cloudflare DNS challenge
   - Dynamic routing based on Docker labels
-  - Ports: 80 (HTTP→HTTPS redirect), 443 (HTTPS), 8883 (MQTTS)
+  - Ports: 80 (HTTP→HTTPS redirect), 443 (HTTPS)
 
-- **OAuth2 Proxy** (prod & stg): Authentication reverse proxy
-  - Uses GitHub OAuth for user authentication
-  - Protects `/admin` routes
-  - Separate instances for production and staging
+- **MQTT Broker**: MeshCore MQTT Broker (WebSocket-only)
+  - Shared by all hub instances
+  - Traefik routes WSS traffic at `mqtt.<domain>/mqtt`
+  - Subscriber authentication with role-based access
 
-- **Mosquitto**: MQTT message broker
-  - Authentication required (no anonymous access)
-  - Native MQTT port 1883 (internal only)
-  - WebSocket on port 8080 (exposed via Traefik at `/mqtt`)
-  - ACL-based topic access control
-
-- **Hub Services** (prod & stg):
-  - `hub-collector`: MQTT message processor
-  - `hub-api`: REST API backend
-  - `hub-web`: Web frontend
+- **Hub Instances**: Independent MeshCore Hub stacks (collector, API, web)
+  - Each has its own `.env` with unique `COMPOSE_PROJECT_NAME`
+  - Storage via Docker volumes (namespaced per project)
+  - Traefik labels for routing (via `docker-compose.traefik.yml`)
+  - Optional Prometheus/Alertmanager via `--profile metrics`
+  - Content mounted from `../infrastructure/content`
 
 ## Environments
 
-| Environment | Domain Pattern | Image Tag | Description |
-|-------------|----------------|-----------|-------------|
-| Production | `ipnt.uk`, `*.ipnt.uk` | `latest` | Stable releases |
-| Staging | `beta.ipnt.uk`, `*.beta.ipnt.uk` | `main` | Development branch |
-
-## Traefik Routing Priority
-
-Higher priority values are evaluated first:
-
-| Priority | Route | Description |
-|----------|-------|-------------|
-| 100 | `/oauth2/*` | OAuth2 callbacks (critical for auth flow) |
-| 100 | `api.*`, `mqtt.*` | API and MQTT endpoints |
-| 60 | `beta.*/admin` | Staging admin panel |
-| 50 | `beta.*` | Staging website |
-| 20 | `*/admin` | Production admin panel |
-| 10 | `*` | Production website (catch-all) |
+| Environment | Domain Pattern | Image Tag | Monitoring |
+|-------------|----------------|-----------|------------|
+| Production | `ipnt.uk`, `*.ipnt.uk` | `v0.9.0` | Yes (`--profile metrics`) |
+| Staging | `beta.ipnt.uk`, `*.beta.ipnt.uk` | `main` | No |
 
 ## Common Development Commands
 
-### Starting/Managing Services
+### Infrastructure Services
 
 ```bash
-# Start all services
-docker compose up -d
+# Start Traefik
+docker compose -f compose/traefik.yml up -d
 
-# Stop all services
-docker compose down
+# Start MQTT broker
+docker compose -f compose/mqtt.yml up -d
+
+# Stop a service
+docker compose -f compose/traefik.yml down
+docker compose -f compose/mqtt.yml down
 
 # View logs
-docker compose logs -f [service-name]
-
-# Restart a specific service
-docker compose restart [service-name]
+docker compose -f compose/traefik.yml logs -f
+docker compose -f compose/mqtt.yml logs -f
 ```
 
-### Network and Volume Setup
+### Hub Instances
 
 ```bash
-# Create required network and volume (first time only)
-docker network create proxy
+# Create a new instance
+./scripts/bootstrap-instance.sh ../hub-prod v0.9.0 ipnt.uk
+
+# Start with monitoring
+docker compose -f docker-compose.yml -f docker-compose.prod.yml \
+  -f docker-compose.traefik.yml --profile core --profile metrics up -d
+
+# Start without monitoring
+docker compose -f docker-compose.yml -f docker-compose.prod.yml \
+  -f docker-compose.traefik.yml --profile core up -d
+
+# Stop an instance
+docker compose -f docker-compose.yml -f docker-compose.prod.yml \
+  -f docker-compose.traefik.yml down
+
+# Run database migrations
+docker compose -f docker-compose.yml -f docker-compose.prod.yml \
+  --profile migrate up db-migrate
+```
+
+### Network and Volume Setup (first time only)
+
+```bash
+docker network create proxy-net
 docker volume create acme
 ```
 
@@ -87,7 +108,7 @@ docker volume create acme
 
 Copy `.env.example` to `.env` and configure:
 
-### Required Variables
+### Infrastructure Variables
 
 | Variable | Description |
 |----------|-------------|
@@ -96,53 +117,36 @@ Copy `.env.example` to `.env` and configure:
 | `DNS_API_EMAIL` | Cloudflare account email |
 | `DNS_API_TOKEN` | Cloudflare DNS API token |
 | `ACME_EMAIL` | Email for Let's Encrypt certificates |
+| `TRAEFIK_HTTP_PORT` | Host port for HTTP (default: `80`) |
+| `TRAEFIK_HTTPS_PORT` | Host port for HTTPS (default: `443`) |
+| `TRAEFIK_LOG_LEVEL` | Traefik log level (default: `INFO`) |
+| `MQTT_PORT` | MQTT WebSocket port (default: `1883`) |
+| `MQTT_USERNAME` | MQTT subscriber username |
+| `MQTT_PASSWORD` | MQTT subscriber password |
+| `MQTT_TOKEN_AUDIENCE` | JWT audience for auth tokens |
 
-### OAuth2 Proxy Variables
-
-| Variable | Description |
-|----------|-------------|
-| `OAUTH2_PROXY_CLIENT_ID` | GitHub OAuth App Client ID |
-| `OAUTH2_PROXY_CLIENT_SECRET` | GitHub OAuth App Client Secret |
-| `OAUTH2_PROXY_COOKIE_SECRET` | 32-byte base64-encoded secret |
-| `OAUTH2_PROXY_GITHUB_ORG` | (Optional) Restrict to GitHub org members |
-| `OAUTH2_PROXY_GITHUB_USERS` | (Optional) Comma-separated allowed usernames |
-
-### Hub Variables
+### Per-Instance Variables (in each hub instance's `.env`)
 
 | Variable | Description |
 |----------|-------------|
-| `HUB_DATA_HOME` | Data directory path |
-| `HUB_SEED_HOME` | Seed data directory path |
-| `HUB_LOG_LEVEL` | Logging level (INFO, DEBUG, etc.) |
-| `HUB_API_READ_KEY` | API read access key |
-| `HUB_API_ADMIN_KEY` | API admin access key |
-| `MQTT_USERNAME` | MQTT broker username |
-| `MQTT_PASSWORD` | MQTT broker password |
+| `COMPOSE_PROJECT_NAME` | Unique project name (e.g., `hub-prod`, `hub-stg`) |
+| `TRAEFIK_DOMAIN` | Domain for this instance (e.g., `ipnt.uk`) |
+| `IMAGE_VERSION` | Docker image tag (e.g., `v0.9.0`, `main`) |
+| `MQTT_HOST` | Set to `mqtt` (shared broker container name) |
+| `CONTENT_HOME` | Set to `../infrastructure/content` |
+| `SEED_HOME` | Seed data directory path |
 
 ## Configuration Files
 
 | File | Description |
 |------|-------------|
-| `docker-compose.yml` | Main service definitions |
-| `config/traefik/config.yml` | Traefik middleware (rate limiting) |
-| `config/mosquitto/mosquitto.conf` | MQTT broker configuration |
-| `config/mosquitto/acl.conf` | MQTT topic access control (copy from `.example`) |
-| `config/mosquitto/passwd` | MQTT user credentials (copy from `.example`) |
-
-## OAuth2 Proxy Authentication Flow
-
-1. User requests protected route (e.g., `/admin`)
-2. OAuth2 Proxy redirects to GitHub OAuth
-3. User authenticates with GitHub
-4. GitHub redirects to `/oauth2/callback` (priority 100)
-5. OAuth2 Proxy sets session cookie (domain-wide: `.${ROOT_DOMAIN}`)
-6. User redirected to original URL
+| `compose/traefik.yml` | Traefik service definition |
+| `compose/mqtt.yml` | MQTT broker service definition |
+| `config/traefik/config.yml` | Traefik static config (rate limiting) |
+| `scripts/bootstrap-instance.sh` | Create a new hub instance directory |
 
 ## Security Notes
 
 - All external traffic uses HTTPS with automatic certificate management
-- OAuth2 Proxy protects admin routes with GitHub authentication
-- Mosquitto requires authentication (users defined in passwd file)
-- MQTT supports TLS (port 8883) and WebSocket over HTTPS
+- MQTT broker requires subscriber authentication
 - Rate limiting middleware available for Traefik routes
-- Cookies are secure (HTTPS-only) and shared across subdomains

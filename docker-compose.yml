@@ -1,8 +1,0 @@
-# IPNet Mesh Infrastructure
-# Main compose file that includes all service components
-
-include:
-  - compose/traefik.yml
-  - compose/hub-prod.yml
-  - compose/hub-stg.yml
-  - compose/mosquitto.yml

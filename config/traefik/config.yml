@@ -8,32 +8,3 @@ http:
         sourceCriterion:
           ipStrategy:
             depth: 1
-
-  routers:
-    robots-txt-prod:
-      rule: "(Host(`www.ipnt.uk`) || Host(`ipnt.uk`)) && Path(`/robots.txt`)"
-      entryPoints:
-        - websecure
-      tls:
-        certResolver: default
-      service: robots-txt-prod
-      priority: 50
-    robots-txt-stg:
-      rule: "Host(`beta.ipnt.uk`) && Path(`/robots.txt`)"
-      entryPoints:
-        - websecure
-      tls:
-        certResolver: default
-      service: robots-txt-stg
-      priority: 51
-
-  services:
-    robots-txt-prod:
-      loadBalancer:
-        servers:
-          - url: "http://hub-web-prod:8080"
-    robots-txt-stg:
-      loadBalancer:
-        servers:
-          - url: "http://hub-web-stg:8080"
-
