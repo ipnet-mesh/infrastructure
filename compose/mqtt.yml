@@ -47,7 +47,7 @@ services:
       start_period: 10s
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.mqtt-ws.rule=Host(`mqtt.${ROOT_DOMAIN}`) && Path(`/mqtt`)"
+      - "traefik.http.routers.mqtt-ws.rule=Host(`mqtt.${ROOT_DOMAIN}`)"
       - "traefik.http.routers.mqtt-ws.priority=100"
       - "traefik.http.routers.mqtt-ws.entrypoints=websecure"
       - "traefik.http.routers.mqtt-ws.tls.certresolver=default"
