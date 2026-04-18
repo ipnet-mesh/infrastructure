@@ -46,4 +46,3 @@ networks:
 
 volumes:
   acme:
-    external: true
