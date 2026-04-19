@@ -1,0 +1,61 @@
+# MeshCore MQTT Broker
+# Shared broker for all hub instances on proxy-net
+
+services:
+  mqtt:
+    image: ghcr.io/ipnet-mesh/meshcore-mqtt-broker:latest
+    container_name: mqtt
+    restart: unless-stopped
+    networks:
+      - proxy-net
+    volumes:
+      - mqtt_broker_data:/data
+    environment:
+      - MQTT_WS_PORT=${MQTT_PORT:-1883}
+      - MQTT_HOST=0.0.0.0
+      - AUTH_EXPECTED_AUDIENCE=${MQTT_TOKEN_AUDIENCE:-mqtt.localhost}
+      - SUBSCRIBER_MAX_CONNECTIONS_DEFAULT=5
+      - SUBSCRIBER_1=${MQTT_USERNAME:-admin}:${MQTT_PASSWORD:-admin}:1
+      - ABUSE_ENFORCEMENT_ENABLED=false
+      - ABUSE_DUPLICATE_WINDOW_SIZE=100
+      - ABUSE_DUPLICATE_WINDOW_MS=300000
+      - ABUSE_DUPLICATE_THRESHOLD=10
+      - ABUSE_MAX_DUPLICATES_PER_PACKET=5
+      - ABUSE_DUPLICATE_RATE_THRESHOLD=0.3
+      - ABUSE_DUPLICATE_RATE_WINDOW_MS=300000
+      - ABUSE_BUCKET_CAPACITY=20
+      - ABUSE_BUCKET_REFILL_RATE=3
+      - ABUSE_MAX_PACKET_SIZE=255
+      - ABUSE_MAX_TOPICS_PER_DAY=3
+      - ABUSE_ANOMALY_THRESHOLD=10
+      - ABUSE_MAX_IATA_CHANGES_24H=3
+      - ABUSE_TOPIC_HISTORY_SIZE=50
+      - ABUSE_TOPIC_HISTORY_WINDOW_MS=86400000
+      - ABUSE_PERSISTENCE_PATH=/data/abuse-detection.db
+      - ABUSE_PERSISTENCE_INTERVAL_MS=300000
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "const net=require('net');const s=net.createConnection(process.env.MQTT_WS_PORT||1883,'127.0.0.1',()=>{s.end();process.exit(0)});s.on('error',()=>process.exit(1));setTimeout(()=>process.exit(1),3000)",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.mqtt-ws.rule=Host(`mqtt.${ROOT_DOMAIN}`)"
+      - "traefik.http.routers.mqtt-ws.priority=100"
+      - "traefik.http.routers.mqtt-ws.entrypoints=websecure"
+      - "traefik.http.routers.mqtt-ws.tls.certresolver=default"
+      - "traefik.http.services.mqtt-ws.loadbalancer.server.port=${MQTT_PORT:-1883}"
+
+networks:
+  proxy-net:
+    external: true
+
+volumes:
+  mqtt_broker_data:
