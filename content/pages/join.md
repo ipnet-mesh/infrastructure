@@ -88,7 +88,7 @@ Welcome to the Ipswich MeshCore Network!
 
 ## Contributing as a Remote Observer
 
-You can help expand IPNet's network coverage by running a [LetsMesh Observer](https://github.com/agessaman/meshcore-packet-capture) — a lightweight Docker container that captures MeshCore RF traffic from a connected LoRa device and publishes decoded packets to IPNet's MQTT broker. This data feeds our network map, dashboard, and message history.
+You can contribute to IPNet by running a [LetsMesh Observer](https://github.com/agessaman/meshcore-packet-capture) — a lightweight Docker container that captures MeshCore RF traffic from a connected LoRa device and publishes decoded packets to IPNet's MQTT broker. Deploying observers throughout the region ensures MeshCore events (advertisements, messages, and nodes) are captured and not missed, feeding our network map, dashboard, and message history.
 
 Enabling the LetsMesh EU option also contributes your observations to the [LetsMesh Analyzer](https://letsmesh.com/).
 
