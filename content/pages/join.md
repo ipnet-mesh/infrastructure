@@ -112,17 +112,17 @@ cp .env.example .env
 
 Edit `.env` with the following values:
 
-| Variable | Value | Description |
-|----------|-------|-------------|
-| `SERIAL_PORT` | `/dev/ttyUSB0` | Device path for your LoRa device. Use `/dev/serial/by-id/...` for a stable path. |
-| `IATA` | e.g. `STN` | 3-letter airport code for your location |
-| `ORIGIN` | `observer` | Observer identifier (or choose a unique name) |
-| `ENABLE_LETSMESH_EU` | `true` | Contribute to LetsMesh EU Analyzer (recommended for EU/UK) |
-| `ENABLE_LETSMESH_US` | `false` | Contribute to LetsMesh US Analyzer (optional) |
-| `CUSTOM_MQTT_HOST` | `mqtt.ipnt.uk` | IPNet's public MQTT broker |
-| `CUSTOM_MQTT_PORT` | `443` | TLS/WSS port |
-| `CUSTOM_MQTT_TLS` | `true` | Required for remote connections |
-| `CUSTOM_MQTT_AUDIENCE` | `mqtt.ipnt.uk` | Must match the broker's token audience |
+| Variable               | Value          | Description                                                                      |
+| ---------------------- | -------------- | -------------------------------------------------------------------------------- |
+| `SERIAL_PORT`          | `/dev/ttyUSB0` | Device path for your LoRa device. Use `/dev/serial/by-id/...` for a stable path. |
+| `IATA`                 | e.g. `STN`     | 3-letter airport code for your location                                          |
+| `ORIGIN`               | `observer`     | Observer identifier (or choose a unique name)                                    |
+| `ENABLE_LETSMESH_EU`   | `true`         | Contribute to LetsMesh EU Analyzer (recommended for EU/UK)                       |
+| `ENABLE_LETSMESH_US`   | `false`        | Contribute to LetsMesh US Analyzer (optional)                                    |
+| `CUSTOM_MQTT_HOST`     | `mqtt.ipnt.uk` | IPNet's public MQTT broker                                                       |
+| `CUSTOM_MQTT_PORT`     | `443`          | TLS/WSS port                                                                     |
+| `CUSTOM_MQTT_TLS`      | `true`         | Required for remote connections                                                  |
+| `CUSTOM_MQTT_AUDIENCE` | `mqtt.ipnt.uk` | Must match the broker's token audience                                           |
 
 Start the observer:
 
@@ -147,8 +147,8 @@ Set the default region scope to `gb` so your repeater will accept and repeat adv
 ```
 region put gb
 region put gb-est gb
-region allow gb
-region allow gb-est
+region allowf gb
+region allowf gb-est
 region save
 ```
 
