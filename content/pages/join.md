@@ -137,3 +137,19 @@ docker compose logs -f
 ```
 
 You should see log output confirming a successful MQTT connection to `mqtt.ipnt.uk` and packets being published as MeshCore traffic is received over LoRa.
+
+## Region Configuration
+
+MeshCore supports region-scoped messaging, allowing repeaters to filter which adverts and messages they accept and forward. For UK operators, we recommend configuring the UK-wide region (`gb`) and the UK East region (`gb-est`). See the [UK Local Mesh guide](https://localmesh.co.uk/meshcore-region-configuration/) for full details.
+
+Set the default region scope to `gb` so your repeater will accept and repeat adverts and other messages for the entire UK area. Run the following commands from the MeshCore CLI:
+
+```
+region put gb
+region put gb-est gb
+region allow gb
+region allow gb-est
+region save
+```
+
+For now, it is recommended to continue allowing flooding from unscoped regions (e.g. `*`).
