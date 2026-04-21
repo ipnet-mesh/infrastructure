@@ -8,6 +8,7 @@ This is the infrastructure repository for IPNet Mesh — a Docker Compose-based 
 
 - **Traefik** reverse proxy with automatic HTTPS via Cloudflare DNS challenges
 - **MeshCore MQTT Broker** shared across all hub instances
+- **Volume Backup** to Backblaze B2 via `offen/docker-volume-backup`
 
 Hub instances (MeshCore Hub) are deployed as separate independent compose stacks, each started from their own directory with wget'd compose files and a local `.env`.
 
@@ -19,7 +20,8 @@ All services connect to an external `proxy-net` Docker network. Each stack is st
 infrastructure/                hub-prod/              hub-stg/
 ├── compose/                   ├── docker-compose.*   ├── docker-compose.*
 │   ├── traefik.yml            ├── etc/               ├── etc/
-│   └── mqtt.yml               └── .env               └── .env
+│   ├── mqtt.yml               └── .env               └── .env
+│   └── backup.yml
 ├── config/
 ├── content/  ← shared volume
 └── .env
@@ -39,6 +41,11 @@ infrastructure/                hub-prod/              hub-stg/
   - Shared by all hub instances
   - Traefik routes WSS traffic at `mqtt.<domain>/mqtt`
   - Subscriber authentication with role-based access
+
+- **Backup**: Volume backup to Backblaze B2 (via `offen/docker-volume-backup`)
+  - Daily snapshots of `hub-prod_data` and `hub-stg_data` volumes
+  - 30-day retention with automatic pruning
+  - S3-compatible B2 endpoint
 
 - **Hub Instances**: Independent MeshCore Hub stacks (collector, API, web)
   - Each has its own `.env` with unique `COMPOSE_PROJECT_NAME`
@@ -65,13 +72,18 @@ docker compose -f compose/traefik.yml up -d
 # Start MQTT broker
 docker compose -f compose/mqtt.yml up -d
 
+# Start volume backup
+docker compose -f compose/backup.yml up -d
+
 # Stop a service
 docker compose -f compose/traefik.yml down
 docker compose -f compose/mqtt.yml down
+docker compose -f compose/backup.yml down
 
 # View logs
 docker compose -f compose/traefik.yml logs -f
 docker compose -f compose/mqtt.yml logs -f
+docker compose -f compose/backup.yml logs -f
 ```
 
 ### Hub Instances
@@ -124,6 +136,10 @@ Copy `.env.example` to `.env` and configure:
 | `MQTT_USERNAME` | MQTT subscriber username |
 | `MQTT_PASSWORD` | MQTT subscriber password |
 | `MQTT_TOKEN_AUDIENCE` | JWT audience for auth tokens |
+| `B2_ENDPOINT` | Backblaze B2 S3 endpoint (e.g., `s3.us-east-005.backblazeb2.com`) |
+| `B2_BUCKET_NAME` | B2 bucket name for backups |
+| `B2_ACCESS_KEY_ID` | B2 application key ID |
+| `B2_SECRET_ACCESS_KEY` | B2 application key secret |
 
 ### Per-Instance Variables (in each hub instance's `.env`)
 
@@ -142,6 +158,7 @@ Copy `.env.example` to `.env` and configure:
 |------|-------------|
 | `compose/traefik.yml` | Traefik service definition |
 | `compose/mqtt.yml` | MQTT broker service definition |
+| `compose/backup.yml` | Volume backup to Backblaze B2 |
 | `config/traefik/config.yml` | Traefik static config (rate limiting) |
 | `scripts/bootstrap-instance.sh` | Create a new hub instance directory |
 

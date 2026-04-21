@@ -1,0 +1,28 @@
+# Volume Backup to Backblaze B2
+# Daily backups of hub-prod and hub-stg data volumes
+# Uses offen/docker-volume-backup with S3-compatible B2 endpoint
+
+services:
+  backup:
+    image: offen/docker-volume-backup:v2
+    container_name: backup
+    restart: unless-stopped
+    environment:
+      - AWS_ENDPOINT=${B2_ENDPOINT}
+      - AWS_S3_BUCKET_NAME=${B2_BUCKET_NAME}
+      - AWS_ACCESS_KEY_ID=${B2_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${B2_SECRET_ACCESS_KEY}
+      - BACKUP_CRON_EXPRESSION=0 0 * * *
+      - BACKUP_RETENTION_DAYS=30
+      - BACKUP_FILENAME=backup-%Y-%m-%dT%H-%M-%S.tar.gz
+      - BACKUP_PRUNING_PREFIX=backup-
+    volumes:
+      - hub-prod_data:/backup/hub-prod:ro
+      - hub-stg_data:/backup/hub-stg:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+
+volumes:
+  hub-prod_data:
+    external: true
+  hub-stg_data:
+    external: true
