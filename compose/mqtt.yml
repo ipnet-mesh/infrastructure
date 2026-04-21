@@ -48,7 +48,7 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.mqtt-ws.rule=Host(`mqtt.${ROOT_DOMAIN}`)"
-      - "traefik.http.routers.mqtt-ws.priority=100"
+      - "traefik.http.routers.mqtt-ws.priority=30"
       - "traefik.http.routers.mqtt-ws.entrypoints=websecure"
       - "traefik.http.routers.mqtt-ws.tls.certresolver=default"
       - "traefik.http.services.mqtt-ws.loadbalancer.server.port=${MQTT_PORT:-1883}"
