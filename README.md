@@ -37,6 +37,7 @@ All services connect to an external `proxy-net` Docker network. Infrastructure s
 |-----------|----------|-------------|
 | **Traefik** | `infrastructure/` | Reverse proxy with automatic HTTPS via Cloudflare DNS challenge |
 | **MQTT Broker** | `infrastructure/` | Shared MeshCore MQTT Broker (WebSocket-only) for all hub instances |
+| **Volume Backup** | `infrastructure/` | Daily volume snapshots to Backblaze B2 via `offen/docker-volume-backup` |
 | **Hub Instances** | Separate directories | Independent MeshCore Hub stacks (collector, API, web, optional monitoring) |
 
 ### Shared Resources
@@ -44,6 +45,7 @@ All services connect to an external `proxy-net` Docker network. Infrastructure s
 - **TLS certificates** — Managed by Traefik via Let's Encrypt with Cloudflare DNS challenge
 - **MQTT broker** — All hub instances connect to the same broker and ingest the same mesh traffic
 - **Content** — `infrastructure/content/` mounted into each hub instance for shared pages and media
+- **Volume backups** — Daily snapshots of `hub-prod_data` and `hub-stg_data` volumes to Backblaze B2 with 30-day retention
 
 ## Prerequisites
 
@@ -75,6 +77,12 @@ MQTT_PORT=1883
 MQTT_USERNAME=mqttuser
 MQTT_PASSWORD=generate-a-secure-password
 MQTT_TOKEN_AUDIENCE=mqtt.example.com
+
+# Backblaze B2 backup
+B2_ENDPOINT=s3.us-east-005.backblazeb2.com
+B2_BUCKET_NAME=my-backup-bucket
+B2_ACCESS_KEY_ID=your-b2-key-id
+B2_SECRET_ACCESS_KEY=your-b2-secret-key
 ```
 
 ### 2. Create Network and Volumes
@@ -92,6 +100,9 @@ docker compose -f compose/traefik.yml up -d
 
 # Start shared MQTT broker
 docker compose -f compose/mqtt.yml up -d
+
+# Start volume backup
+docker compose -f compose/backup.yml up -d
 ```
 
 ### 4. Verify
@@ -209,6 +220,10 @@ These are set in `infrastructure/.env` and apply to Traefik and the shared MQTT 
 | `MQTT_USERNAME` | MQTT subscriber username | Required |
 | `MQTT_PASSWORD` | MQTT subscriber password | Required |
 | `MQTT_TOKEN_AUDIENCE` | JWT audience for authentication tokens | `mqtt.localhost` |
+| `B2_ENDPOINT` | Backblaze B2 S3-compatible endpoint | Required |
+| `B2_BUCKET_NAME` | B2 bucket name for volume backups | Required |
+| `B2_ACCESS_KEY_ID` | B2 application key ID | Required |
+| `B2_SECRET_ACCESS_KEY` | B2 application key secret | Required |
 
 ### Per-Instance Variables
 
@@ -235,14 +250,20 @@ These are set in each hub instance's `.env`. See [MeshCore Hub's `.env.example`]
 # Start services
 docker compose -f compose/traefik.yml up -d
 docker compose -f compose/mqtt.yml up -d
+docker compose -f compose/backup.yml up -d
 
 # Stop services
 docker compose -f compose/traefik.yml down
 docker compose -f compose/mqtt.yml down
+docker compose -f compose/backup.yml down
 
 # View logs
 docker compose -f compose/traefik.yml logs -f
 docker compose -f compose/mqtt.yml logs -f
+docker compose -f compose/backup.yml logs -f
+
+# Trigger a manual backup
+docker compose -f compose/backup.yml exec backup backup
 ```
 
 ### Hub Instances
@@ -280,7 +301,8 @@ docker compose -f docker-compose.yml -f docker-compose.prod.yml \
 infrastructure/
 ├── compose/
 │   ├── traefik.yml              # Traefik reverse proxy
-│   └── mqtt.yml                 # Shared MeshCore MQTT broker
+│   ├── mqtt.yml                 # Shared MeshCore MQTT broker
+│   └── backup.yml               # Volume backup to Backblaze B2
 ├── config/
 │   └── traefik/
 │       └── config.yml           # Traefik static config (rate limiting)
