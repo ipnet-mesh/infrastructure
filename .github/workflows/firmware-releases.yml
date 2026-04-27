@@ -61,7 +61,7 @@ jobs:
             echo "$name ($DATE)"
             echo "$url"
             echo ""
-          done | jq -sR '{content: "New MeshCore firmware releases detected:\n\n" + .}')
+          done | jq -sR '{content: "New MeshCore Firmware Releases Available\n\n" + .}')
 
           curl -s -X POST \
             -H "Content-Type: application/json" \
