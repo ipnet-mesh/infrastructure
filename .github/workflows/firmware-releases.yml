@@ -1,0 +1,73 @@
+name: Firmware Releases
+
+on:
+  workflow_dispatch:
+    inputs:
+      days_back:
+        description: 'Lookback window in days'
+        required: false
+        default: '8'
+  # schedule:
+  #   - cron: '0 9 * * 1'
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Fetch releases
+        id: fetch
+        run: |
+          DAYS_BACK="${{ inputs.days_back || vars.FIRMWARE_RELEASE_WINDOW_DAYS || '8' }}"
+          CUTOFF=$(date -d "${DAYS_BACK} days ago" -u +%Y-%m-%dT%H:%M:%SZ)
+          echo "cutoff=$CUTOFF" >> $GITHUB_OUTPUT
+
+          RELEASES=$(curl -s 'https://api.github.com/repos/meshcore-dev/MeshCore/releases?per_page=30')
+
+          NEW=$(
+            echo "$RELEASES" \
+              | jq -r --arg cutoff "$CUTOFF" '
+                  map(select(
+                    (.tag_name | test("^(repeater|room-server|companion)-v")) and
+                    (.published_at > $cutoff)
+                  ))
+                  | sort_by(.published_at)
+                  | .[]
+                  | "\(.tag_name)|\(.name)|\(.published_at)|\(.html_url)"
+                '
+          )
+
+          if [ -z "$NEW" ]; then
+            echo "found=false" >> $GITHUB_OUTPUT
+            echo "No new firmware releases in the last ${DAYS_BACK} days."
+          else
+            echo "found=true" >> $GITHUB_OUTPUT
+            echo "$NEW"
+            {
+              echo "releases<<EOF"
+              echo "$NEW"
+              echo "EOF"
+            } >> $GITHUB_OUTPUT
+          fi
+
+      - name: Notify Discord
+        if: steps.fetch.outputs.found == 'true'
+        env:
+          WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL_FIRMWARE_RELEASES }}
+        run: |
+          MSG="New MeshCore firmware releases detected:"
+
+          while IFS='|' read -r tag name published url; do
+            DATE=$(date -d "$published" -u +'%b %d %Y')
+            MSG="${MSG}
+${name} (${DATE})
+${url}
+"
+          done <<< "${{ steps.fetch.outputs.releases }}"
+
+          PAYLOAD=$(jq -n --arg content "$MSG" '{content: $content}')
+
+          curl -s -X POST \
+            -H "Content-Type: application/json" \
+            -d "$PAYLOAD" \
+            "$WEBHOOK_URL"
