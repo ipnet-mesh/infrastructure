@@ -8,4 +8,4 @@ groups:
           severity: warning
         annotations:
           summary: "Infrastructure Nodes Not Seen"
-          description: '{{ $labels.node_name }} ({{ printf "%.8s" $labels.public_key }}) — last seen {{ $value | humanizeDuration }} ago'
+          description: '*{{ $labels.node_name }}* ({{ printf "%.8s" $labels.public_key }}) — last seen {{ $value | humanizeDuration }} ago'

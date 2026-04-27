@@ -10,6 +10,6 @@ receivers:
     slack_configs:
       - api_url: 'DISCORD_WEBHOOK_URL/slack'
         channel: '#alerts'
-        title: '{{ if eq .Status "firing" }}⚠{{ else }}✅{{ end }} {{ .CommonAnnotations.summary }}'
+        title: '{{ .CommonAnnotations.summary }}'
         text: '{{ range .Alerts }}• {{ .Annotations.description }}{{ "\n" }}{{ end }}'
         send_resolved: true
