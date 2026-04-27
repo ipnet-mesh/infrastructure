@@ -4,9 +4,9 @@ on:
   workflow_dispatch:
     inputs:
       days_back:
-        description: 'Lookback window in days'
+        description: "Lookback window in days"
         required: false
-        default: '8'
+        default: "8"
   # schedule:
   #   - cron: '0 9 * * 1'
 
@@ -61,7 +61,7 @@ jobs:
             echo "$name ($DATE)"
             echo "$url"
             echo ""
-          done | jq -sR '{content: "New MeshCore firmware releases detected:\n" + .}')
+          done | jq -sR '{content: "New MeshCore firmware releases detected:\n\n" + .}')
 
           curl -s -X POST \
             -H "Content-Type: application/json" \
