@@ -64,7 +64,7 @@ jobs:
           done)
 
           PAYLOAD=$(jq -n \
-            --arg header "New MeshCore firmware releases detected:" \
+            --arg header "New MeshCore Firmware Releases Available:" \
             --arg body "$BODY" \
             '{content: "\($header)\n\n\($body)"}')
 
