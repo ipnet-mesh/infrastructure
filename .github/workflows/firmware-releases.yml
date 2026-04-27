@@ -60,9 +60,9 @@ jobs:
           while IFS='|' read -r tag name published url; do
             DATE=$(date -d "$published" -u +'%b %d %Y')
             MSG="${MSG}
-${name} (${DATE})
-${url}
-"
+          ${name} (${DATE})
+          ${url}
+          "
           done <<< "${{ steps.fetch.outputs.releases }}"
 
           PAYLOAD=$(jq -n --arg content "$MSG" '{content: $content}')
