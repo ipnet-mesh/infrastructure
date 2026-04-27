@@ -70,7 +70,7 @@ jobs:
             --arg header "$HEADER" \
             --arg body "$BODY" \
             --arg footer "$FOOTER" \
-            '{content: "\($header)\n\n\($body)\n\($footer)"}')
+            '{content: "\($header)\n\n\($body)\n\n\($footer)"}')
 
           curl -s -X POST \
             -H "Content-Type: application/json" \
