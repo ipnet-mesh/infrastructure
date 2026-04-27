@@ -11,5 +11,5 @@ receivers:
       - api_url: 'DISCORD_WEBHOOK_URL/slack'
         channel: '#alerts'
         title: '{{ .CommonAnnotations.summary }}'
-        text: '{{ range .Alerts }}• {{ .Annotations.description }}{{ "\n" }}{{ end }}'
+        text: '{{ range .Alerts }}{{ if eq .Status "firing" }}[DOWN] {{ .Annotations.description }}{{ "\n" }}{{ else }}[UP] {{ .Labels.node_name }} has recovered{{ "\n" }}{{ end }}{{ end }}'
         send_resolved: true
