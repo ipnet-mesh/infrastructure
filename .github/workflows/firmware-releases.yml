@@ -56,6 +56,9 @@ jobs:
           WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL_FIRMWARE_RELEASES }}
           RELEASES: ${{ steps.fetch.outputs.releases }}
         run: |
+          HEADER="New MeshCore firmware releases detected:"
+          FOOTER="Update your devices at the MeshCore Web Flasher: https://flasher.meshcore.io/"
+
           BODY=$(echo "$RELEASES" | while IFS='|' read -r tag name published url; do
             DATE=$(date -d "$published" -u +'%b %d %Y')
             echo "$name ($DATE)"
@@ -64,9 +67,10 @@ jobs:
           done)
 
           PAYLOAD=$(jq -n \
-            --arg header "New MeshCore Firmware Releases Available:" \
+            --arg header "$HEADER" \
             --arg body "$BODY" \
-            '{content: "\($header)\n\n\($body)"}')
+            --arg footer "$FOOTER" \
+            '{content: "\($header)\n\n\($body)\n\($footer)"}')
 
           curl -s -X POST \
             -H "Content-Type: application/json" \
