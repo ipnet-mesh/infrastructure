@@ -54,18 +54,14 @@ jobs:
         if: steps.fetch.outputs.found == 'true'
         env:
           WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL_FIRMWARE_RELEASES }}
+          RELEASES: ${{ steps.fetch.outputs.releases }}
         run: |
-          MSG="New MeshCore firmware releases detected:"
-
-          while IFS='|' read -r tag name published url; do
+          PAYLOAD=$(echo "$RELEASES" | while IFS='|' read -r tag name published url; do
             DATE=$(date -d "$published" -u +'%b %d %Y')
-            MSG="${MSG}
-          ${name} (${DATE})
-          ${url}
-          "
-          done <<< "${{ steps.fetch.outputs.releases }}"
-
-          PAYLOAD=$(jq -n --arg content "$MSG" '{content: $content}')
+            echo "$name ($DATE)"
+            echo "$url"
+            echo ""
+          done | jq -sR '{content: "New MeshCore firmware releases detected:\n" + .}')
 
           curl -s -X POST \
             -H "Content-Type: application/json" \
