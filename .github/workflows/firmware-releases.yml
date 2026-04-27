@@ -8,7 +8,7 @@ on:
         required: false
         default: "8"
   schedule:
-    - cron: '0 9 * * 1'
+    - cron: "0 9 * * 1"
 
 jobs:
   FirmwareNotify:
@@ -56,7 +56,7 @@ jobs:
           WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL_FIRMWARE_RELEASES }}
           RELEASES: ${{ steps.fetch.outputs.releases }}
         run: |
-          HEADER="New MeshCore firmware releases detected:"
+          HEADER="New MeshCore Firmware Release Available"
           FOOTER="Update your devices at the MeshCore Web Flasher: https://flasher.meshcore.io/"
 
           BODY=$(echo "$RELEASES" | while IFS='|' read -r tag name published url; do
