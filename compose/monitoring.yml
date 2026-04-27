@@ -2,7 +2,7 @@
 # Infrastructure-level monitoring for MeshCore Hub instances
 #
 # Prometheus scrapes hub API metrics and Alertmanager routes alerts to Discord.
-# Both services are exposed via Traefik at prometheus.<domain> and alerts.<domain>.
+# Both services are exposed via Traefik at metrics.<domain> and alerts.<domain>.
 #
 # Prerequisites:
 #   - Traefik configured with Docker provider and attached to proxy-net
@@ -36,10 +36,10 @@ services:
         exec /bin/prometheus \
           --config.file=/etc/prometheus/prometheus.yml \
           --storage.tsdb.path=/prometheus \
-          --web.external-url=https://prometheus.${ROOT_DOMAIN}
+          --web.external-url=https://metrics.${ROOT_DOMAIN}
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.prometheus.rule=Host(`prometheus.${ROOT_DOMAIN}`)"
+      - "traefik.http.routers.prometheus.rule=Host(`metrics.${ROOT_DOMAIN}`)"
       - "traefik.http.routers.prometheus.priority=30"
       - "traefik.http.routers.prometheus.entrypoints=websecure"
       - "traefik.http.routers.prometheus.tls.certresolver=default"
