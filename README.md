@@ -7,28 +7,34 @@ Docker Compose-based infrastructure for hosting multiple MeshCore Hub instances 
 All services connect to an external `proxy-net` Docker network. Infrastructure services (Traefik, MQTT) are managed here. Each MeshCore Hub instance is a separate independent compose stack.
 
 ```
-                     Internet Users
-                          │
-                     HTTPS (443)
-                  ┌────────▼─────────┐
-                  │     Traefik      │
-                  │  (Reverse Proxy) │
-                  │  TLS/ACME via    │
-                  │  Cloudflare DNS  │
-                  └────────┬─────────┘
+                      Internet Users
                            │
-          ┌────────────────┼──────────────────┐
-          │                │                  │
-     ┌────▼─────┐   ┌──────▼──────┐   ┌──────▼──────┐
-     │  MQTT    │   │ hub-prod/   │   │ hub-stg/    │
-     │  Broker  │◄──│  collector  │   │  collector  │
-     │(shared)  │◄──│  api        │   │  api        │
-     └──────────┘   │  web        │   │  web        │
-                    │  prometheus │   └─────────────┘
-                    └─────────────┘
-          │                │                  │
-          └────────────────┼──────────────────┘
-                     proxy-net (external)
+                      HTTPS (443)
+                   ┌────────▼─────────┐
+                   │     Traefik      │
+                   │  (Reverse Proxy) │
+                   │  TLS/ACME via    │
+                   │  Cloudflare DNS  │
+                   └────────┬─────────┘
+                            │
+           ┌────────────────┼──────────────────┐
+           │                │                  │
+      ┌────▼─────┐   ┌──────▼──────┐   ┌──────▼──────┐
+      │  MQTT    │   │ hub-prod/   │   │ hub-stg/    │
+      │  Broker  │◄──│  collector  │   │  collector  │
+      │(shared)  │◄──│  api        │   │  api        │
+      └──────────┘   │  web        │   │  web        │
+                     └──────┬──────┘   └─────────────┘
+                            │
+                   ┌────────▼─────────┐
+                   │   Monitoring     │
+                   │  Prometheus      │
+                   │  Alertmanager    │
+                   │  (Discord alerts)│
+                   └──────────────────┘
+           │                │                  │
+           └────────────────┼──────────────────┘
+                      proxy-net (external)
 ```
 
 ### Components
@@ -38,7 +44,8 @@ All services connect to an external `proxy-net` Docker network. Infrastructure s
 | **Traefik** | `infrastructure/` | Reverse proxy with automatic HTTPS via Cloudflare DNS challenge |
 | **MQTT Broker** | `infrastructure/` | Shared MeshCore MQTT Broker (WebSocket-only) for all hub instances |
 | **Volume Backup** | `infrastructure/` | Daily volume snapshots to Backblaze B2 via `offen/docker-volume-backup` |
-| **Hub Instances** | Separate directories | Independent MeshCore Hub stacks (collector, API, web, optional monitoring) |
+| **Monitoring** | `infrastructure/` | Prometheus and Alertmanager scraping hub API metrics with Discord alerts |
+| **Hub Instances** | Separate directories | Independent MeshCore Hub stacks (collector, API, web) |
 
 ### Shared Resources
 
@@ -103,6 +110,9 @@ docker compose -f compose/mqtt.yml up -d
 
 # Start volume backup
 docker compose -f compose/backup.yml up -d
+
+# Start monitoring (Prometheus & Alertmanager)
+docker compose -f compose/monitoring.yml up -d
 ```
 
 ### 4. Verify
@@ -143,8 +153,6 @@ hub-prod/
 └── .env                          # Instance configuration
 ```
 
-### Configuring an Instance
-
 Edit the instance's `.env` file. Key variables:
 
 ```env
@@ -171,16 +179,6 @@ Additional configuration (API keys, network name, feature flags, etc.) is docume
 ```bash
 cd ../hub-prod
 
-# With monitoring (Prometheus + Alertmanager)
-docker compose \
-  -f docker-compose.yml \
-  -f docker-compose.prod.yml \
-  -f docker-compose.traefik.yml \
-  --profile core \
-  --profile metrics \
-  up -d
-
-# Without monitoring
 docker compose \
   -f docker-compose.yml \
   -f docker-compose.prod.yml \
@@ -195,7 +193,7 @@ Each instance must have a unique `COMPOSE_PROJECT_NAME`. This prefixes all conta
 
 | Instance | `COMPOSE_PROJECT_NAME` | `TRAEFIK_DOMAIN` | `IMAGE_VERSION` | Monitoring |
 |----------|------------------------|------------------|-----------------|------------|
-| Production | `hub-prod` | `ipnt.uk` | `v0.9.0` | Yes |
+| Production | `hub-prod` | `ipnt.uk` | `v0.9.0` | Yes (infrastructure stack) |
 | Staging | `hub-stg` | `beta.ipnt.uk` | `main` | No |
 
 Both instances ingest the same MQTT messages into their own independent databases.
@@ -224,6 +222,9 @@ These are set in `infrastructure/.env` and apply to Traefik and the shared MQTT 
 | `B2_BUCKET_NAME` | B2 bucket name for volume backups | Required |
 | `B2_ACCESS_KEY_ID` | B2 application key ID | Required |
 | `B2_SECRET_ACCESS_KEY` | B2 application key secret | Required |
+| `HUB_API_READ_KEY` | Hub API key for Prometheus basic auth | Required |
+| `HUB_API_TARGET` | Hub API container target for Prometheus | `hub-prod-api:8000` |
+| `DISCORD_WEBHOOK_URL` | Discord webhook URL for Alertmanager alerts | Required |
 
 ### Per-Instance Variables
 
@@ -251,16 +252,19 @@ These are set in each hub instance's `.env`. See [MeshCore Hub's `.env.example`]
 docker compose -f compose/traefik.yml up -d
 docker compose -f compose/mqtt.yml up -d
 docker compose -f compose/backup.yml up -d
+docker compose -f compose/monitoring.yml up -d
 
 # Stop services
 docker compose -f compose/traefik.yml down
 docker compose -f compose/mqtt.yml down
 docker compose -f compose/backup.yml down
+docker compose -f compose/monitoring.yml down
 
 # View logs
 docker compose -f compose/traefik.yml logs -f
 docker compose -f compose/mqtt.yml logs -f
 docker compose -f compose/backup.yml logs -f
+docker compose -f compose/monitoring.yml logs -f
 
 # Trigger a manual backup
 docker compose -f compose/backup.yml exec backup backup
@@ -271,11 +275,7 @@ docker compose -f compose/backup.yml exec backup backup
 ```bash
 cd ../hub-prod
 
-# Start (with monitoring)
-docker compose -f docker-compose.yml -f docker-compose.prod.yml \
-  -f docker-compose.traefik.yml --profile core --profile metrics up -d
-
-# Start (without monitoring)
+# Start
 docker compose -f docker-compose.yml -f docker-compose.prod.yml \
   -f docker-compose.traefik.yml --profile core up -d
 
@@ -302,6 +302,7 @@ infrastructure/
 ├── compose/
 │   ├── traefik.yml              # Traefik reverse proxy
 │   ├── mqtt.yml                 # Shared MeshCore MQTT broker
+│   ├── monitoring.yml           # Prometheus and Alertmanager
 │   └── backup.yml               # Volume backup to Backblaze B2
 ├── config/
 │   └── traefik/
@@ -321,3 +322,4 @@ infrastructure/
 - MQTT broker requires subscriber authentication with role-based access
 - Rate limiting middleware available for Traefik routes
 - No ports are exposed directly on hub instances — all traffic goes through Traefik
+- Discord Alertmanager notifications do not support Markdown or emoji — use plain text only

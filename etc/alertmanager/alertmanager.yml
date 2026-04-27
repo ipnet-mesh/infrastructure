@@ -1,0 +1,15 @@
+route:
+  receiver: discord
+  group_by: ['alertname']
+  group_wait: 30s
+  group_interval: 5m
+  repeat_interval: 24h
+
+receivers:
+  - name: discord
+    slack_configs:
+      - api_url: 'DISCORD_WEBHOOK_URL/slack'
+        channel: '#alerts'
+        title: '{{ .CommonAnnotations.summary }}'
+        text: '{{ range .Alerts }}{{ if eq .Status "firing" }}[DOWN] {{ .Annotations.description }}{{ "\n" }}{{ else }}[UP] {{ .Labels.node_name }} has recovered{{ "\n" }}{{ end }}{{ end }}'
+        send_resolved: true

@@ -1,0 +1,79 @@
+# Prometheus & Alertmanager
+# Infrastructure-level monitoring for MeshCore Hub instances
+#
+# Prometheus scrapes hub API metrics and Alertmanager routes alerts to Discord.
+# Both services are exposed via Traefik at metrics.<domain> and alerts.<domain>.
+#
+# Prerequisites:
+#   - Traefik configured with Docker provider and attached to proxy-net
+#   - ROOT_DOMAIN set in .env
+#   - HUB_API_TARGET set to the hub API container name (e.g., hub-prod-api:8000)
+#
+# Usage:
+#   docker compose -f compose/monitoring.yml up -d
+
+services:
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    restart: unless-stopped
+    networks:
+      - proxy-net
+    volumes:
+      - ../etc/prometheus/prometheus.yml:/etc/prometheus/prometheus.tmpl.yml:ro
+      - ../etc/prometheus/rules:/etc/prometheus/rules:ro
+      - prometheus_data:/prometheus
+    user: root
+    environment:
+      - HUB_API_READ_KEY=${HUB_API_READ_KEY:-}
+      - HUB_API_TARGET=${HUB_API_TARGET:-hub-prod-api:8000}
+    entrypoint: /bin/sh
+    command:
+      - -c
+      - |
+        echo "$$HUB_API_READ_KEY" > /etc/prometheus/api_read_key
+        sed "s|HUB_API_TARGET|$$HUB_API_TARGET|g" /etc/prometheus/prometheus.tmpl.yml > /etc/prometheus/prometheus.yml
+        exec /bin/prometheus \
+          --config.file=/etc/prometheus/prometheus.yml \
+          --storage.tsdb.path=/prometheus \
+          --web.external-url=https://metrics.${ROOT_DOMAIN}
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.prometheus.rule=Host(`metrics.${ROOT_DOMAIN}`)"
+      - "traefik.http.routers.prometheus.priority=30"
+      - "traefik.http.routers.prometheus.entrypoints=websecure"
+      - "traefik.http.routers.prometheus.tls.certresolver=default"
+      - "traefik.http.services.prometheus.loadbalancer.server.port=9090"
+
+  alertmanager:
+    image: prom/alertmanager:latest
+    container_name: alertmanager
+    restart: unless-stopped
+    networks:
+      - proxy-net
+    volumes:
+      - ../etc/alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.tmpl.yml:ro
+    environment:
+      - DISCORD_WEBHOOK_URL=${DISCORD_WEBHOOK_URL:-}
+    entrypoint: /bin/sh
+    command:
+      - -c
+      - |
+        sed "s|DISCORD_WEBHOOK_URL|$$DISCORD_WEBHOOK_URL|g" /etc/alertmanager/alertmanager.tmpl.yml > /tmp/alertmanager.yml
+        exec /bin/alertmanager \
+          --config.file=/tmp/alertmanager.yml \
+          --web.external-url=https://alerts.${ROOT_DOMAIN}
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.alertmanager.rule=Host(`alerts.${ROOT_DOMAIN}`)"
+      - "traefik.http.routers.alertmanager.priority=30"
+      - "traefik.http.routers.alertmanager.entrypoints=websecure"
+      - "traefik.http.routers.alertmanager.tls.certresolver=default"
+      - "traefik.http.services.alertmanager.loadbalancer.server.port=9093"
+
+networks:
+  proxy-net:
+    external: true
+
+volumes:
+  prometheus_data:

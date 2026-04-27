@@ -8,6 +8,7 @@ This is the infrastructure repository for IPNet Mesh — a Docker Compose-based 
 
 - **Traefik** reverse proxy with automatic HTTPS via Cloudflare DNS challenges
 - **MeshCore MQTT Broker** shared across all hub instances
+- **Prometheus & Alertmanager** monitoring hub API metrics with Discord alerts
 - **Volume Backup** to Backblaze B2 via `offen/docker-volume-backup`
 
 Hub instances (MeshCore Hub) are deployed as separate independent compose stacks, each started from their own directory with wget'd compose files and a local `.env`.
@@ -21,6 +22,7 @@ infrastructure/                hub-prod/              hub-stg/
 ├── compose/                   ├── docker-compose.*   ├── docker-compose.*
 │   ├── traefik.yml            ├── etc/               ├── etc/
 │   ├── mqtt.yml               └── .env               └── .env
+│   ├── monitoring.yml
 │   └── backup.yml
 ├── config/
 ├── content/  ← shared volume
@@ -47,18 +49,23 @@ infrastructure/                hub-prod/              hub-stg/
   - 30-day retention with automatic pruning
   - S3-compatible B2 endpoint
 
+- **Monitoring**: Prometheus and Alertmanager
+  - Prometheus scrapes hub API `/metrics` endpoint
+  - Alertmanager routes alerts to Discord via Slack-compatible webhook
+  - Exposed at `metrics.<domain>` and `alerts.<domain>` via Traefik
+  - Scrape target configurable via `HUB_API_TARGET` (default: `hub-prod-api:8000`)
+
 - **Hub Instances**: Independent MeshCore Hub stacks (collector, API, web)
   - Each has its own `.env` with unique `COMPOSE_PROJECT_NAME`
   - Storage via Docker volumes (namespaced per project)
   - Traefik labels for routing (via `docker-compose.traefik.yml`)
-  - Optional Prometheus/Alertmanager via `--profile metrics`
   - Content mounted from `../infrastructure/content`
 
 ## Environments
 
 | Environment | Domain Pattern | Image Tag | Monitoring |
 |-------------|----------------|-----------|------------|
-| Production | `ipnt.uk`, `*.ipnt.uk` | `v0.9.0` | Yes (`--profile metrics`) |
+| Production | `ipnt.uk`, `*.ipnt.uk` | `v0.9.0` | Yes (infrastructure stack) |
 | Staging | `beta.ipnt.uk`, `*.beta.ipnt.uk` | `main` | No |
 
 ## Common Development Commands
@@ -75,15 +82,20 @@ docker compose -f compose/mqtt.yml up -d
 # Start volume backup
 docker compose -f compose/backup.yml up -d
 
+# Start monitoring (Prometheus & Alertmanager)
+docker compose -f compose/monitoring.yml up -d
+
 # Stop a service
 docker compose -f compose/traefik.yml down
 docker compose -f compose/mqtt.yml down
 docker compose -f compose/backup.yml down
+docker compose -f compose/monitoring.yml down
 
 # View logs
 docker compose -f compose/traefik.yml logs -f
 docker compose -f compose/mqtt.yml logs -f
 docker compose -f compose/backup.yml logs -f
+docker compose -f compose/monitoring.yml logs -f
 ```
 
 ### Hub Instances
@@ -92,11 +104,7 @@ docker compose -f compose/backup.yml logs -f
 # Create a new instance
 ./scripts/bootstrap-instance.sh ../hub-prod v0.9.0 ipnt.uk
 
-# Start with monitoring
-docker compose -f docker-compose.yml -f docker-compose.prod.yml \
-  -f docker-compose.traefik.yml --profile core --profile metrics up -d
-
-# Start without monitoring
+# Start
 docker compose -f docker-compose.yml -f docker-compose.prod.yml \
   -f docker-compose.traefik.yml --profile core up -d
 
@@ -140,6 +148,9 @@ Copy `.env.example` to `.env` and configure:
 | `B2_BUCKET_NAME` | B2 bucket name for backups |
 | `B2_ACCESS_KEY_ID` | B2 application key ID |
 | `B2_SECRET_ACCESS_KEY` | B2 application key secret |
+| `HUB_API_READ_KEY` | Hub API key for Prometheus basic auth |
+| `HUB_API_TARGET` | Hub API container target (default: `hub-prod-api:8000`) |
+| `DISCORD_WEBHOOK_URL` | Discord webhook URL for Alertmanager alerts |
 
 ### Per-Instance Variables (in each hub instance's `.env`)
 
@@ -158,8 +169,12 @@ Copy `.env.example` to `.env` and configure:
 |------|-------------|
 | `compose/traefik.yml` | Traefik service definition |
 | `compose/mqtt.yml` | MQTT broker service definition |
+| `compose/monitoring.yml` | Prometheus and Alertmanager |
 | `compose/backup.yml` | Volume backup to Backblaze B2 |
 | `config/traefik/config.yml` | Traefik static config (rate limiting) |
+| `etc/prometheus/prometheus.yml` | Prometheus scrape and alerting config |
+| `etc/prometheus/rules/meshcore.yml` | Prometheus alert rules |
+| `etc/alertmanager/alertmanager.yml` | Alertmanager Discord routing config |
 | `scripts/bootstrap-instance.sh` | Create a new hub instance directory |
 
 ## Security Notes
@@ -167,3 +182,4 @@ Copy `.env.example` to `.env` and configure:
 - All external traffic uses HTTPS with automatic certificate management
 - MQTT broker requires subscriber authentication
 - Rate limiting middleware available for Traefik routes
+- Discord Alertmanager notifications do not support Markdown or emoji — use plain text only
