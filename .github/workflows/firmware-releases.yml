@@ -57,12 +57,12 @@ jobs:
           RELEASES: ${{ steps.fetch.outputs.releases }}
         run: |
           HEADER="New MeshCore Firmware Release Available"
-          FOOTER="Update your devices at the MeshCore Web Flasher: https://flasher.meshcore.io/"
+          FOOTER="Update your devices at the MeshCore Web Flasher: <https://flasher.meshcore.io/>"
 
           BODY=$(echo "$RELEASES" | while IFS='|' read -r tag name published url; do
             DATE=$(date -d "$published" -u +'%b %d %Y')
             echo "$name ($DATE)"
-            echo "$url"
+            echo "<$url>"
             echo ""
           done)
 
