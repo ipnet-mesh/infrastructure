@@ -52,7 +52,7 @@ infrastructure/                hub-prod/              hub-stg/
 - **Monitoring**: Prometheus and Alertmanager
   - Prometheus scrapes hub API `/metrics` endpoint
   - Alertmanager routes alerts to Discord via Slack-compatible webhook
-  - Exposed at `prometheus.<domain>` and `alerts.<domain>` via Traefik
+  - Exposed at `metrics.<domain>` and `alerts.<domain>` via Traefik
   - Scrape target configurable via `HUB_API_TARGET` (default: `hub-prod-api:8000`)
 
 - **Hub Instances**: Independent MeshCore Hub stacks (collector, API, web)
