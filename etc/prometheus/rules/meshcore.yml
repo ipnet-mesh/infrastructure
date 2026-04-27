@@ -2,10 +2,10 @@ groups:
   - name: meshcore
     rules:
       - alert: NodeNotSeen
-        expr: time() - meshcore_node_last_seen_timestamp_seconds{role="infra"} > 60 * 3600
+        expr: time() - meshcore_node_last_seen_timestamp_seconds{role="infra"} > 72 * 3600
         for: 5m
         labels:
           severity: warning
         annotations:
           summary: "Infrastructure node not seen: {{ $labels.node_name }} ({{ printf \"%.8s\" $labels.public_key }})"
-          description: "Node has not been heard from for over 2.5 days ({{ $value | humanizeDuration }})"
+          description: "Node has not been heard from for over 3 days ({{ $value | humanizeDuration }})"
