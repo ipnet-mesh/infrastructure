@@ -182,3 +182,4 @@ Copy `.env.example` to `.env` and configure:
 - All external traffic uses HTTPS with automatic certificate management
 - MQTT broker requires subscriber authentication
 - Rate limiting middleware available for Traefik routes
+- Discord Alertmanager notifications do not support Markdown or emoji — use plain text only
