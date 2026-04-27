@@ -1,5 +1,7 @@
 # IPNet Mesh Infrastructure
 
+[![Firmware Releases](https://github.com/ipnet-mesh/infrastructure/actions/workflows/firmware-releases.yml/badge.svg)](https://github.com/ipnet-mesh/infrastructure/actions/workflows/firmware-releases.yml)
+
 Docker Compose-based infrastructure for hosting multiple MeshCore Hub instances behind a shared Traefik reverse proxy and MQTT broker.
 
 ## Architecture
