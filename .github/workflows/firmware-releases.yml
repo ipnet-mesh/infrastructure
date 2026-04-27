@@ -11,11 +11,11 @@ on:
   #   - cron: '0 9 * * 1'
 
 jobs:
-  check:
+  FirmwareNotify:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Fetch releases
+      - name: Fetch Releases
         id: fetch
         run: |
           DAYS_BACK="${{ inputs.days_back || vars.FIRMWARE_RELEASE_WINDOW_DAYS || '8' }}"
