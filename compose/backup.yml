@@ -19,7 +19,7 @@ services:
     volumes:
       - hub-prod_data:/backup/hub-prod:ro
       - hub-stg_data:/backup/hub-stg:ro
-      - compose_postgres_data:/backup/postgres:ro
+      - postgres_data:/backup/postgres:ro
       - /var/run/docker.sock:/var/run/docker.sock:ro
 
 volumes:
