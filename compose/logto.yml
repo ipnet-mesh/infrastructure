@@ -34,12 +34,14 @@ services:
       - "traefik.http.routers.logto-auth.priority=30"
       - "traefik.http.routers.logto-auth.entrypoints=websecure"
       - "traefik.http.routers.logto-auth.tls.certresolver=default"
+      - "traefik.http.routers.logto-auth.service=logto-auth"
       - "traefik.http.services.logto-auth.loadbalancer.server.port=3001"
       # Core OIDC endpoint (port 3002) → id.<ROOT_DOMAIN>
       - "traefik.http.routers.logto-id.rule=Host(`id.${ROOT_DOMAIN}`)"
       - "traefik.http.routers.logto-id.priority=30"
       - "traefik.http.routers.logto-id.entrypoints=websecure"
       - "traefik.http.routers.logto-id.tls.certresolver=default"
+      - "traefik.http.routers.logto-id.service=logto-id"
       - "traefik.http.services.logto-id.loadbalancer.server.port=3002"
 
 networks:
