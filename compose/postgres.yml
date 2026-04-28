@@ -1,0 +1,40 @@
+# PostgreSQL Database
+# Shared database server for all services on proxy-net
+#
+# Init SQL scripts in etc/postgres/init/ run on first container start.
+# Add numbered .sql files there to create databases and users for services.
+#
+# Prerequisites:
+#   - proxy-net external network exists
+#   - POSTGRES_USER and POSTGRES_PASSWORD set in .env
+#
+# Usage:
+#   docker compose -f compose/postgres.yml up -d
+
+services:
+  postgres:
+    image: postgres:${POSTGRES_IMAGE_TAG:-17-alpine}
+    container_name: postgres
+    restart: unless-stopped
+    networks:
+      - proxy-net
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ../etc/postgres/init:/docker-entrypoint-initdb.d:ro
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER:-admin}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-admin}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+networks:
+  proxy-net:
+    external: true
+
+volumes:
+  postgres_data:
+    external: true
