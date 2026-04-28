@@ -47,6 +47,7 @@ All services connect to an external `proxy-net` Docker network. Infrastructure s
 | **MQTT Broker** | `infrastructure/` | Shared MeshCore MQTT Broker (WebSocket-only) for all hub instances |
 | **Volume Backup** | `infrastructure/` | Daily volume snapshots to Backblaze B2 via `offen/docker-volume-backup` |
 | **Monitoring** | `infrastructure/` | Prometheus and Alertmanager scraping hub API metrics with Discord alerts |
+| **LogTo** | `infrastructure/` | Self-hosted OIDC identity provider with admin console and core endpoint |
 | **Hub Instances** | Separate directories | Independent MeshCore Hub stacks (collector, API, web) |
 
 ### Shared Resources
@@ -55,6 +56,7 @@ All services connect to an external `proxy-net` Docker network. Infrastructure s
 - **MQTT broker** — All hub instances connect to the same broker and ingest the same mesh traffic
 - **Content** — `infrastructure/content/` mounted into each hub instance for shared pages and media
 - **Volume backups** — Daily snapshots of `hub-prod_data`, `hub-stg_data`, and `postgres_data` volumes to Backblaze B2 with 30-day retention
+- **Identity provider** — LogTo provides OIDC authentication for all services at `id.<domain>` with admin at `auth.<domain>`
 
 ## Prerequisites
 
@@ -119,6 +121,9 @@ docker compose -f compose/backup.yml up -d
 
 # Start monitoring (Prometheus & Alertmanager)
 docker compose -f compose/monitoring.yml up -d
+
+# Start LogTo identity provider
+docker compose -f compose/logto.yml up -d
 ```
 
 ### 4. Verify
@@ -235,6 +240,10 @@ These are set in `infrastructure/.env` and apply to Traefik and the shared MQTT 
 | `HUB_API_READ_KEY` | Hub API key for Prometheus basic auth | Required |
 | `HUB_API_TARGET` | Hub API container target for Prometheus | `hub-prod-api:8000` |
 | `DISCORD_WEBHOOK_URL` | Discord webhook URL for Alertmanager alerts | Required |
+| `LOGTO_IMAGE_TAG` | LogTo Docker image tag | `latest` |
+| `POSTGRES_LOGTO_USERNAME` | PostgreSQL user for LogTo | `logto` |
+| `POSTGRES_LOGTO_PASSWORD` | PostgreSQL password for LogTo | Required |
+| `PRIVATE_KEY_ROTATION_GRACE_PERIOD` | OIDC key rotation grace period (seconds) | `3600` |
 
 ### Per-Instance Variables
 
@@ -264,6 +273,7 @@ docker compose -f compose/mqtt.yml up -d
 docker compose -f compose/postgres.yml up -d
 docker compose -f compose/backup.yml up -d
 docker compose -f compose/monitoring.yml up -d
+docker compose -f compose/logto.yml up -d
 
 # Stop services
 docker compose -f compose/traefik.yml down
@@ -271,6 +281,7 @@ docker compose -f compose/mqtt.yml down
 docker compose -f compose/postgres.yml down
 docker compose -f compose/backup.yml down
 docker compose -f compose/monitoring.yml down
+docker compose -f compose/logto.yml down
 
 # View logs
 docker compose -f compose/traefik.yml logs -f
@@ -278,6 +289,7 @@ docker compose -f compose/mqtt.yml logs -f
 docker compose -f compose/postgres.yml logs -f
 docker compose -f compose/backup.yml logs -f
 docker compose -f compose/monitoring.yml logs -f
+docker compose -f compose/logto.yml logs -f
 
 # Trigger a manual backup
 docker compose -f compose/backup.yml exec backup backup
@@ -316,6 +328,7 @@ infrastructure/
 │   ├── traefik.yml              # Traefik reverse proxy
 │   ├── mqtt.yml                 # Shared MeshCore MQTT broker
 │   ├── monitoring.yml           # Prometheus and Alertmanager
+│   ├── logto.yml                # LogTo identity provider
 │   └── backup.yml               # Volume backup to Backblaze B2
 ├── config/
 │   └── traefik/

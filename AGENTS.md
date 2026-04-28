@@ -9,6 +9,7 @@ This is the infrastructure repository for IPNet Mesh — a Docker Compose-based 
 - **Traefik** reverse proxy with automatic HTTPS via Cloudflare DNS challenges
 - **PostgreSQL** database server shared across services
 - **MeshCore MQTT Broker** shared across all hub instances
+- **LogTo** self-hosted OIDC identity provider
 - **Prometheus & Alertmanager** monitoring hub API metrics with Discord alerts
 - **Volume Backup** to Backblaze B2 via `offen/docker-volume-backup`
 
@@ -24,6 +25,7 @@ infrastructure/                hub-prod/              hub-stg/
 │   ├── traefik.yml            ├── etc/               ├── etc/
 │   ├── mqtt.yml               └── .env               └── .env
 │   ├── postgres.yml
+│   ├── logto.yml
 │   ├── monitoring.yml
 │   └── backup.yml
 ├── config/
@@ -62,6 +64,11 @@ infrastructure/                hub-prod/              hub-stg/
   - Exposed at `metrics.<domain>` and `alerts.<domain>` via Traefik
   - Scrape target configurable via `HUB_API_TARGET` (default: `hub-prod-api:8000`)
 
+- **LogTo**: Self-hosted OIDC identity provider
+  - Admin console exposed at `auth.<domain>` via Traefik (port 3001)
+  - Core OIDC endpoint exposed at `id.<domain>` via Traefik (port 3002)
+  - Uses shared PostgreSQL with dedicated database and user
+
 - **Hub Instances**: Independent MeshCore Hub stacks (collector, API, web)
   - Each has its own `.env` with unique `COMPOSE_PROJECT_NAME`
   - Storage via Docker volumes (namespaced per project)
@@ -92,11 +99,15 @@ docker compose -f compose/backup.yml up -d
 # Start monitoring (Prometheus & Alertmanager)
 docker compose -f compose/monitoring.yml up -d
 
+# Start LogTo identity provider
+docker compose -f compose/logto.yml up -d
+
 # Stop a service
 docker compose -f compose/traefik.yml down
 docker compose -f compose/mqtt.yml down
 docker compose -f compose/backup.yml down
 docker compose -f compose/monitoring.yml down
+docker compose -f compose/logto.yml down
 
 # View logs
 docker compose -f compose/traefik.yml logs -f
@@ -104,6 +115,7 @@ docker compose -f compose/mqtt.yml logs -f
 docker compose -f compose/postgres.yml logs -f
 docker compose -f compose/backup.yml logs -f
 docker compose -f compose/monitoring.yml logs -f
+docker compose -f compose/logto.yml logs -f
 ```
 
 ### Hub Instances
@@ -160,6 +172,10 @@ Copy `.env.example` to `.env` and configure:
 | `HUB_API_READ_KEY` | Hub API key for Prometheus basic auth |
 | `HUB_API_TARGET` | Hub API container target (default: `hub-prod-api:8000`) |
 | `DISCORD_WEBHOOK_URL` | Discord webhook URL for Alertmanager alerts |
+| `LOGTO_IMAGE_TAG` | LogTo Docker image tag (default: `latest`) |
+| `POSTGRES_LOGTO_USERNAME` | PostgreSQL user for LogTo (default: `logto`) |
+| `POSTGRES_LOGTO_PASSWORD` | PostgreSQL password for LogTo |
+| `PRIVATE_KEY_ROTATION_GRACE_PERIOD` | OIDC key rotation grace period in seconds (default: `3600`) |
 
 ### Per-Instance Variables (in each hub instance's `.env`)
 
@@ -180,6 +196,7 @@ Copy `.env.example` to `.env` and configure:
 | `compose/mqtt.yml` | MQTT broker service definition |
 | `compose/postgres.yml` | PostgreSQL database server |
 | `compose/monitoring.yml` | Prometheus and Alertmanager |
+| `compose/logto.yml` | LogTo identity provider |
 | `compose/backup.yml` | Volume backup to Backblaze B2 |
 | `config/traefik/config.yml` | Traefik static config (rate limiting) |
 | `etc/prometheus/prometheus.yml` | Prometheus scrape and alerting config |

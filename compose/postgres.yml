@@ -24,6 +24,8 @@ services:
     environment:
       - POSTGRES_USER=${POSTGRES_USER:-admin}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_LOGTO_USERNAME=${POSTGRES_LOGTO_USERNAME:-logto}
+      - POSTGRES_LOGTO_PASSWORD=${POSTGRES_LOGTO_PASSWORD}
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-admin}"]
       interval: 10s
