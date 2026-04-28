@@ -7,6 +7,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 This is the infrastructure repository for IPNet Mesh — a Docker Compose-based setup providing:
 
 - **Traefik** reverse proxy with automatic HTTPS via Cloudflare DNS challenges
+- **PostgreSQL** database server shared across services
 - **MeshCore MQTT Broker** shared across all hub instances
 - **Prometheus & Alertmanager** monitoring hub API metrics with Discord alerts
 - **Volume Backup** to Backblaze B2 via `offen/docker-volume-backup`
@@ -22,6 +23,7 @@ infrastructure/                hub-prod/              hub-stg/
 ├── compose/                   ├── docker-compose.*   ├── docker-compose.*
 │   ├── traefik.yml            ├── etc/               ├── etc/
 │   ├── mqtt.yml               └── .env               └── .env
+│   ├── postgres.yml
 │   ├── monitoring.yml
 │   └── backup.yml
 ├── config/
@@ -44,8 +46,13 @@ infrastructure/                hub-prod/              hub-stg/
   - Traefik routes WSS traffic at `mqtt.<domain>/mqtt`
   - Subscriber authentication with role-based access
 
+- **PostgreSQL**: Shared database server
+  - Accessible to all services on `proxy-net`
+  - Init SQL scripts in `etc/postgres/init/` for creating service databases and users
+  - Data stored in `postgres_data` volume (included in daily backups)
+
 - **Backup**: Volume backup to Backblaze B2 (via `offen/docker-volume-backup`)
-  - Daily snapshots of `hub-prod_data` and `hub-stg_data` volumes
+  - Daily snapshots of `hub-prod_data`, `hub-stg_data`, and `postgres_data` volumes
   - 30-day retention with automatic pruning
   - S3-compatible B2 endpoint
 
@@ -94,6 +101,7 @@ docker compose -f compose/monitoring.yml down
 # View logs
 docker compose -f compose/traefik.yml logs -f
 docker compose -f compose/mqtt.yml logs -f
+docker compose -f compose/postgres.yml logs -f
 docker compose -f compose/backup.yml logs -f
 docker compose -f compose/monitoring.yml logs -f
 ```
@@ -122,6 +130,7 @@ docker compose -f docker-compose.yml -f docker-compose.prod.yml \
 ```bash
 docker network create proxy-net
 docker volume create acme
+docker volume create postgres_data
 ```
 
 ## Environment Variables
@@ -169,6 +178,7 @@ Copy `.env.example` to `.env` and configure:
 |------|-------------|
 | `compose/traefik.yml` | Traefik service definition |
 | `compose/mqtt.yml` | MQTT broker service definition |
+| `compose/postgres.yml` | PostgreSQL database server |
 | `compose/monitoring.yml` | Prometheus and Alertmanager |
 | `compose/backup.yml` | Volume backup to Backblaze B2 |
 | `config/traefik/config.yml` | Traefik static config (rate limiting) |

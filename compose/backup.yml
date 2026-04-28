@@ -19,10 +19,13 @@ services:
     volumes:
       - hub-prod_data:/backup/hub-prod:ro
       - hub-stg_data:/backup/hub-stg:ro
+      - postgres_data:/backup/postgres:ro
       - /var/run/docker.sock:/var/run/docker.sock:ro
 
 volumes:
   hub-prod_data:
     external: true
   hub-stg_data:
+    external: true
+  postgres_data:
     external: true

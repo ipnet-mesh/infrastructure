@@ -1,0 +1,10 @@
+-- Placeholder init script for PostgreSQL
+--
+-- SQL files in this directory run alphabetically on first container start.
+-- Add numbered files (e.g., 01_hud_db.sql, 02_api_user.sql) to create
+-- databases and users for individual services.
+--
+-- Example:
+--   CREATE DATABASE myservice;
+--   CREATE USER myservice_user WITH ENCRYPTED PASSWORD 'secret';
+--   GRANT ALL PRIVILEGES ON DATABASE myservice TO myservice_user;

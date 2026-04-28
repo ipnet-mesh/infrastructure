@@ -19,24 +19,24 @@ All services connect to an external `proxy-net` Docker network. Infrastructure s
                    │  Cloudflare DNS  │
                    └────────┬─────────┘
                             │
-           ┌────────────────┼──────────────────┐
-           │                │                  │
-      ┌────▼─────┐   ┌──────▼──────┐   ┌──────▼──────┐
-      │  MQTT    │   │ hub-prod/   │   │ hub-stg/    │
-      │  Broker  │◄──│  collector  │   │  collector  │
-      │(shared)  │◄──│  api        │   │  api        │
-      └──────────┘   │  web        │   │  web        │
-                     └──────┬──────┘   └─────────────┘
-                            │
-                   ┌────────▼─────────┐
-                   │   Monitoring     │
-                   │  Prometheus      │
-                   │  Alertmanager    │
-                   │  (Discord alerts)│
-                   └──────────────────┘
-           │                │                  │
-           └────────────────┼──────────────────┘
-                      proxy-net (external)
+            ┌────────────────┼──────────────────┐
+            │                │                  │
+       ┌────▼─────┐   ┌──────▼──────┐   ┌──────▼──────┐
+       │  MQTT    │   │ hub-prod/   │   │ hub-stg/    │
+       │  Broker  │◄──│  collector  │   │  collector  │
+       │(shared)  │◄──│  api        │   │  api        │
+       └──────────┘   │  web        │   │  web        │
+                      └──────┬──────┘   └─────────────┘
+                             │
+                    ┌────────▼─────────┐
+                    │   Monitoring     │
+                    │  Prometheus      │
+                    │  Alertmanager    │
+                    │  (Discord alerts)│
+                    └──────────────────┘
+            │                │                  │
+            └────────────────┼──────────────────┘
+                       proxy-net (external)
 ```
 
 ### Components
@@ -54,7 +54,7 @@ All services connect to an external `proxy-net` Docker network. Infrastructure s
 - **TLS certificates** — Managed by Traefik via Let's Encrypt with Cloudflare DNS challenge
 - **MQTT broker** — All hub instances connect to the same broker and ingest the same mesh traffic
 - **Content** — `infrastructure/content/` mounted into each hub instance for shared pages and media
-- **Volume backups** — Daily snapshots of `hub-prod_data` and `hub-stg_data` volumes to Backblaze B2 with 30-day retention
+- **Volume backups** — Daily snapshots of `hub-prod_data`, `hub-stg_data`, and `postgres_data` volumes to Backblaze B2 with 30-day retention
 
 ## Prerequisites
 
@@ -99,11 +99,15 @@ B2_SECRET_ACCESS_KEY=your-b2-secret-key
 ```bash
 docker network create proxy-net
 docker volume create acme
+docker volume create postgres_data
 ```
 
 ### 3. Start Infrastructure Services
 
 ```bash
+# Start PostgreSQL
+docker compose -f compose/postgres.yml up -d
+
 # Start Traefik reverse proxy
 docker compose -f compose/traefik.yml up -d
 
@@ -121,6 +125,7 @@ docker compose -f compose/monitoring.yml up -d
 
 - Traefik dashboard: `http://localhost:8080`
 - MQTT broker health: `docker compose -f compose/mqtt.yml logs mqtt`
+- PostgreSQL health: `docker compose -f compose/postgres.yml logs postgres`
 
 ## Multi-Instance Setup
 
@@ -220,6 +225,9 @@ These are set in `infrastructure/.env` and apply to Traefik and the shared MQTT 
 | `MQTT_USERNAME` | MQTT subscriber username | Required |
 | `MQTT_PASSWORD` | MQTT subscriber password | Required |
 | `MQTT_TOKEN_AUDIENCE` | JWT audience for authentication tokens | `mqtt.localhost` |
+| `POSTGRES_IMAGE_TAG` | PostgreSQL Docker image tag | `17-alpine` |
+| `POSTGRES_USER` | PostgreSQL superuser username | Required |
+| `POSTGRES_PASSWORD` | PostgreSQL superuser password | Required |
 | `B2_ENDPOINT` | Backblaze B2 S3-compatible endpoint | Required |
 | `B2_BUCKET_NAME` | B2 bucket name for volume backups | Required |
 | `B2_ACCESS_KEY_ID` | B2 application key ID | Required |
@@ -253,18 +261,21 @@ These are set in each hub instance's `.env`. See [MeshCore Hub's `.env.example`]
 # Start services
 docker compose -f compose/traefik.yml up -d
 docker compose -f compose/mqtt.yml up -d
+docker compose -f compose/postgres.yml up -d
 docker compose -f compose/backup.yml up -d
 docker compose -f compose/monitoring.yml up -d
 
 # Stop services
 docker compose -f compose/traefik.yml down
 docker compose -f compose/mqtt.yml down
+docker compose -f compose/postgres.yml down
 docker compose -f compose/backup.yml down
 docker compose -f compose/monitoring.yml down
 
 # View logs
 docker compose -f compose/traefik.yml logs -f
 docker compose -f compose/mqtt.yml logs -f
+docker compose -f compose/postgres.yml logs -f
 docker compose -f compose/backup.yml logs -f
 docker compose -f compose/monitoring.yml logs -f
 
@@ -312,6 +323,14 @@ infrastructure/
 ├── content/                     # Shared content (mounted by hub instances)
 │   ├── media/
 │   └── pages/
+├── etc/
+│   ├── postgres/
+│   │   └── init/                # Init SQL scripts (run on first start)
+│   ├── prometheus/
+│   │   ├── prometheus.yml
+│   │   └── rules/
+│   └── alertmanager/
+│       └── alertmanager.yml
 ├── scripts/
 │   └── bootstrap-instance.sh    # Create a new hub instance directory
 ├── .env                         # Infrastructure configuration
