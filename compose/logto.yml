@@ -1,0 +1,49 @@
+# LogTo - Self-hosted Identity Provider
+# OIDC authentication service with admin console and core endpoint.
+#
+# Prerequisites:
+#   - Traefik configured with Docker provider and attached to proxy-net
+#   - ROOT_DOMAIN set in .env
+#   - POSTGRES_LOGTO_USERNAME and POSTGRES_LOGTO_PASSWORD set in .env
+#   - PostgreSQL init script (etc/postgres/init/01_logto_db.sh) run on first start
+#
+# Usage:
+#   docker compose -f compose/logto.yml up -d
+
+services:
+  logto:
+    image: svhd/logto:${LOGTO_IMAGE_TAG:-latest}
+    container_name: logto
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - proxy-net
+    environment:
+      - TRUST_PROXY_HEADER=1
+      - DB_URL=postgres://${POSTGRES_LOGTO_USERNAME}:${POSTGRES_LOGTO_PASSWORD}@postgres:5432/logto
+      - PRIVATE_KEY_ROTATION_GRACE_PERIOD=${PRIVATE_KEY_ROTATION_GRACE_PERIOD:-3600}
+      - ENDPOINT=https://auth.${ROOT_DOMAIN}
+      - ADMIN_ENDPOINT=https://id.${ROOT_DOMAIN}
+    entrypoint: ["sh", "-c", "npm run cli db seed -- --swe && npm start"]
+    labels:
+      - "traefik.enable=true"
+      # Core OIDC endpoint (port 3001) → auth.<ROOT_DOMAIN>
+      - "traefik.http.routers.logto-auth.rule=Host(`auth.${ROOT_DOMAIN}`)"
+      - "traefik.http.routers.logto-auth.priority=30"
+      - "traefik.http.routers.logto-auth.entrypoints=websecure"
+      - "traefik.http.routers.logto-auth.tls.certresolver=default"
+      - "traefik.http.routers.logto-auth.service=logto-auth"
+      - "traefik.http.services.logto-auth.loadbalancer.server.port=3001"
+      # Admin console (port 3002) → id.<ROOT_DOMAIN>
+      - "traefik.http.routers.logto-id.rule=Host(`id.${ROOT_DOMAIN}`)"
+      - "traefik.http.routers.logto-id.priority=30"
+      - "traefik.http.routers.logto-id.entrypoints=websecure"
+      - "traefik.http.routers.logto-id.tls.certresolver=default"
+      - "traefik.http.routers.logto-id.service=logto-id"
+      - "traefik.http.services.logto-id.loadbalancer.server.port=3002"
+
+networks:
+  proxy-net:
+    external: true
