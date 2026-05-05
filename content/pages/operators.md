@@ -31,7 +31,7 @@ Once adopted, you can manage **custom tags** for that node to provide additional
 
 Adopted nodes are automatically monitored for downtime. If an adopted node goes offline, an alert will be posted to the **#alerts** channel on Discord.
 
-You are not required to take action on every alert, but sustained or repeated downtime may be reviewed by admins (see [Operator Rules](#operator-rules)).
+You are not required to take action on every alert, but sustained or repeated downtime may be reviewed by admins.
 
 ## Operator Rules
 
