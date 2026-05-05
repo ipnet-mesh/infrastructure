@@ -46,20 +46,7 @@ All IPNet operators are expected to follow these rules:
 
 ### Node Naming Convention
 
-Adopted repeater nodes must follow the naming convention below, in this order:
-
-- **Postcode prefix** — the node name must start with your postcode area prefix (e.g. `IP1`, `IP2`, `IP12`)
-- **Location** — include a rough location such as a street or road name (e.g. Fountains Road, Norwich Road), a well-known landmark (e.g. Wine Rack, Railway Station, Football Ground, Ipswich Museum), or a locale/region name (e.g. Shotley, Melton, Woodbridge)
-- **Domain reference** — include the main IPNet website domain `ipnt.uk`
-
-#### Examples
-
-| Name                          | Breakdown                              |
-| ----------------------------- | -------------------------------------- |
-| IP2 Fountains Road (ipnt.uk)  | Postcode prefix + street name + domain |
-| IP2 Railway Station (ipnt.uk) | Postcode prefix + landmark + domain    |
-| IP4 Wine Rack (ipnt.uk)       | Postcode prefix + landmark + domain    |
-| IP12 Sutton Heath (ipnt.uk)   | Postcode prefix + locale name + domain |
+*To be confirmed.*
 
 ## Admin Rights
 
