@@ -54,11 +54,12 @@ Adopted repeater nodes must follow the naming convention below, in this order:
 
 #### Examples
 
-| Name                         | Breakdown                              |
-| ---------------------------- | -------------------------------------- |
-| IP2 Fountains Road (ipnt.uk) | Postcode prefix + street name + domain |
-| IP4 Wine Rack (ipnt.uk)      | Postcode prefix + landmark + domain    |
-| IP12 Sutton Heath (ipnt.uk)  | Postcode prefix + locale name + domain |
+| Name                          | Breakdown                              |
+| ----------------------------- | -------------------------------------- |
+| IP2 Fountains Road (ipnt.uk)  | Postcode prefix + street name + domain |
+| IP2 Railway Station (ipnt.uk) | Postcode prefix + landmark + domain    |
+| IP4 Wine Rack (ipnt.uk)       | Postcode prefix + landmark + domain    |
+| IP12 Sutton Heath (ipnt.uk)   | Postcode prefix + locale name + domain |
 
 ## Admin Rights
 
