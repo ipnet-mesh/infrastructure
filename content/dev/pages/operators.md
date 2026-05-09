@@ -8,6 +8,46 @@ menu_order: 20
 
 Operators are trusted community members who manage official IPNet repeater nodes. This page covers how to become an operator, manage your nodes, and the rules that apply.
 
+## Repeater Configuration
+
+All official IPNet repeaters must be configured as follows.
+
+### Regions
+
+Repeaters must be configured with `gb` and `gb-est` regions, with `gb-est` as a child of `gb`. The repeater's home region should be set to `gb-est`, and unscoped flooding must be disabled.
+
+Using the Repeater CLI:
+
+```
+region put gb
+region put gb-est gb
+region allowf gb
+region allowf gb-est
+region home gb-est
+region save
+```
+
+### Flood Adverts
+
+Set flood adverts to **50 hours or more** and zero-hop adverts to **0** (disabled).
+
+### Advanced Settings
+
+```
+set path.hash.mode 1
+set loop.detect minimal
+set dutycycle 10
+```
+
+### Unscoped Flooding Disable
+
+From **Saturday 13 June 2026**, unscoped region flooding must also be disabled:
+
+```
+region denyf *
+region save
+```
+
 ## Becoming an Operator
 
 To become an official IPNet operator, you must submit a request for review. You can do this by:
