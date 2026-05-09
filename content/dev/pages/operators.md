@@ -31,9 +31,10 @@ region save
 
 Set flood adverts to **50 hours or more** and zero-hop adverts to **0** (disabled).
 
-### Multi-Byte Support / Loop Detection
+### Duty Cycle / Multi-Byte Support / Loop Detection
 
 ```
+set dutycycle 10
 set path.hash.mode 1
 set loop.detect minimal
 ```
