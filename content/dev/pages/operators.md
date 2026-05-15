@@ -8,11 +8,17 @@ menu_order: 20
 
 Operators are trusted community members who manage official IPNet repeater nodes. This page covers how to become an operator, manage your nodes, and the rules that apply.
 
+## Regions
+
+The UK MeshCore network is growing and the increasing number of nodes means more background traffic: advertisement packets, route updates, and bot messages.
+
+The channel is congested, causing missed messages, failed logins to repeaters, and reduced reliability. By adding scopes (regions) traffic from afar is reduced and reliability of local packets is increased.
+
+We are using the region name `gb-est` that is intended to cover Suffolk, Essex, Norfolk and Cambridgeshire.
+
 ## Repeater Configuration
 
 All official IPNet repeaters must be configured as follows.
-
-### Regions
 
 Repeaters must be configured with `gb` and `gb-est` regions, with `gb-est` as a child of `gb`. The repeater's home region should be set to `gb-est`, and unscoped flooding must be disabled.
 
@@ -86,7 +92,7 @@ All IPNet operators are expected to follow these rules:
 
 ### Node Naming Convention
 
-*To be confirmed.*
+_To be confirmed._
 
 ## Admin Rights
 
