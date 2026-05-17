@@ -77,10 +77,10 @@ infrastructure/                hub-prod/              hub-stg/
 
 ## Environments
 
-| Environment | Domain Pattern | Image Tag | Monitoring |
-|-------------|----------------|-----------|------------|
-| Production | `ipnt.uk`, `*.ipnt.uk` | `v0.9.0` | Yes (infrastructure stack) |
-| Staging | `beta.ipnt.uk`, `*.beta.ipnt.uk` | `main` | No |
+| Environment | Domain Pattern                   | Image Tag | Monitoring                 |
+| ----------- | -------------------------------- | --------- | -------------------------- |
+| Production  | `ipnt.uk`, `*.ipnt.uk`           | `v0.9.0`  | Yes (infrastructure stack) |
+| Staging     | `beta.ipnt.uk`, `*.beta.ipnt.uk` | `main`    | No                         |
 
 ## Common Development Commands
 
@@ -143,6 +143,7 @@ docker compose -f docker-compose.yml -f docker-compose.prod.yml \
 docker network create proxy-net
 docker volume create acme
 docker volume create postgres_data
+docker volume create prometheus_data
 ```
 
 ## Environment Variables
@@ -151,58 +152,58 @@ Copy `.env.example` to `.env` and configure:
 
 ### Infrastructure Variables
 
-| Variable | Description |
-|----------|-------------|
-| `ROOT_DOMAIN` | Root domain (e.g., `ipnt.uk`) |
-| `DNS_PROVIDER` | DNS provider for ACME (e.g., `cloudflare`) |
-| `DNS_API_EMAIL` | Cloudflare account email |
-| `DNS_API_TOKEN` | Cloudflare DNS API token |
-| `ACME_EMAIL` | Email for Let's Encrypt certificates |
-| `TRAEFIK_HTTP_PORT` | Host port for HTTP (default: `80`) |
-| `TRAEFIK_HTTPS_PORT` | Host port for HTTPS (default: `443`) |
-| `TRAEFIK_LOG_LEVEL` | Traefik log level (default: `INFO`) |
-| `MQTT_PORT` | MQTT WebSocket port (default: `1883`) |
-| `MQTT_USERNAME` | MQTT subscriber username |
-| `MQTT_PASSWORD` | MQTT subscriber password |
-| `MQTT_TOKEN_AUDIENCE` | JWT audience for auth tokens |
-| `B2_ENDPOINT` | Backblaze B2 S3 endpoint (e.g., `s3.us-east-005.backblazeb2.com`) |
-| `B2_BUCKET_NAME` | B2 bucket name for backups |
-| `B2_ACCESS_KEY_ID` | B2 application key ID |
-| `B2_SECRET_ACCESS_KEY` | B2 application key secret |
-| `HUB_API_READ_KEY` | Hub API key for Prometheus basic auth |
-| `HUB_API_TARGET` | Hub API container target (default: `hub-prod-api:8000`) |
-| `DISCORD_WEBHOOK_URL` | Discord webhook URL for Alertmanager alerts |
-| `LOGTO_IMAGE_TAG` | LogTo Docker image tag (default: `latest`) |
-| `POSTGRES_LOGTO_USERNAME` | PostgreSQL user for LogTo (default: `logto`) |
-| `POSTGRES_LOGTO_PASSWORD` | PostgreSQL password for LogTo |
-| `PRIVATE_KEY_ROTATION_GRACE_PERIOD` | OIDC key rotation grace period in seconds (default: `3600`) |
+| Variable                            | Description                                                       |
+| ----------------------------------- | ----------------------------------------------------------------- |
+| `ROOT_DOMAIN`                       | Root domain (e.g., `ipnt.uk`)                                     |
+| `DNS_PROVIDER`                      | DNS provider for ACME (e.g., `cloudflare`)                        |
+| `DNS_API_EMAIL`                     | Cloudflare account email                                          |
+| `DNS_API_TOKEN`                     | Cloudflare DNS API token                                          |
+| `ACME_EMAIL`                        | Email for Let's Encrypt certificates                              |
+| `TRAEFIK_HTTP_PORT`                 | Host port for HTTP (default: `80`)                                |
+| `TRAEFIK_HTTPS_PORT`                | Host port for HTTPS (default: `443`)                              |
+| `TRAEFIK_LOG_LEVEL`                 | Traefik log level (default: `INFO`)                               |
+| `MQTT_PORT`                         | MQTT WebSocket port (default: `1883`)                             |
+| `MQTT_USERNAME`                     | MQTT subscriber username                                          |
+| `MQTT_PASSWORD`                     | MQTT subscriber password                                          |
+| `MQTT_TOKEN_AUDIENCE`               | JWT audience for auth tokens                                      |
+| `B2_ENDPOINT`                       | Backblaze B2 S3 endpoint (e.g., `s3.us-east-005.backblazeb2.com`) |
+| `B2_BUCKET_NAME`                    | B2 bucket name for backups                                        |
+| `B2_ACCESS_KEY_ID`                  | B2 application key ID                                             |
+| `B2_SECRET_ACCESS_KEY`              | B2 application key secret                                         |
+| `HUB_API_READ_KEY`                  | Hub API key for Prometheus basic auth                             |
+| `HUB_API_TARGET`                    | Hub API container target (default: `hub-prod-api:8000`)           |
+| `DISCORD_WEBHOOK_URL`               | Discord webhook URL for Alertmanager alerts                       |
+| `LOGTO_IMAGE_TAG`                   | LogTo Docker image tag (default: `latest`)                        |
+| `POSTGRES_LOGTO_USERNAME`           | PostgreSQL user for LogTo (default: `logto`)                      |
+| `POSTGRES_LOGTO_PASSWORD`           | PostgreSQL password for LogTo                                     |
+| `PRIVATE_KEY_ROTATION_GRACE_PERIOD` | OIDC key rotation grace period in seconds (default: `3600`)       |
 
 ### Per-Instance Variables (in each hub instance's `.env`)
 
-| Variable | Description |
-|----------|-------------|
+| Variable               | Description                                       |
+| ---------------------- | ------------------------------------------------- |
 | `COMPOSE_PROJECT_NAME` | Unique project name (e.g., `hub-prod`, `hub-stg`) |
-| `TRAEFIK_DOMAIN` | Domain for this instance (e.g., `ipnt.uk`) |
-| `IMAGE_VERSION` | Docker image tag (e.g., `v0.9.0`, `main`) |
-| `MQTT_HOST` | Set to `mqtt` (shared broker container name) |
-| `CONTENT_HOME` | Set to `../infrastructure/content` |
-| `SEED_HOME` | Seed data directory path |
+| `TRAEFIK_DOMAIN`       | Domain for this instance (e.g., `ipnt.uk`)        |
+| `IMAGE_VERSION`        | Docker image tag (e.g., `v0.9.0`, `main`)         |
+| `MQTT_HOST`            | Set to `mqtt` (shared broker container name)      |
+| `CONTENT_HOME`         | Set to `../infrastructure/content`                |
+| `SEED_HOME`            | Seed data directory path                          |
 
 ## Configuration Files
 
-| File | Description |
-|------|-------------|
-| `compose/traefik.yml` | Traefik service definition |
-| `compose/mqtt.yml` | MQTT broker service definition |
-| `compose/postgres.yml` | PostgreSQL database server |
-| `compose/monitoring.yml` | Prometheus and Alertmanager |
-| `compose/logto.yml` | LogTo identity provider |
-| `compose/backup.yml` | Volume backup to Backblaze B2 |
-| `config/traefik/config.yml` | Traefik static config (rate limiting) |
-| `etc/prometheus/prometheus.yml` | Prometheus scrape and alerting config |
-| `etc/prometheus/rules/meshcore.yml` | Prometheus alert rules |
-| `etc/alertmanager/alertmanager.yml` | Alertmanager Discord routing config |
-| `scripts/bootstrap-instance.sh` | Create a new hub instance directory |
+| File                                | Description                           |
+| ----------------------------------- | ------------------------------------- |
+| `compose/traefik.yml`               | Traefik service definition            |
+| `compose/mqtt.yml`                  | MQTT broker service definition        |
+| `compose/postgres.yml`              | PostgreSQL database server            |
+| `compose/monitoring.yml`            | Prometheus and Alertmanager           |
+| `compose/logto.yml`                 | LogTo identity provider               |
+| `compose/backup.yml`                | Volume backup to Backblaze B2         |
+| `config/traefik/config.yml`         | Traefik static config (rate limiting) |
+| `etc/prometheus/prometheus.yml`     | Prometheus scrape and alerting config |
+| `etc/prometheus/rules/meshcore.yml` | Prometheus alert rules                |
+| `etc/alertmanager/alertmanager.yml` | Alertmanager Discord routing config   |
+| `scripts/bootstrap-instance.sh`     | Create a new hub instance directory   |
 
 ## Security Notes
 

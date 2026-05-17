@@ -20,6 +20,7 @@ services:
       - hub-prod_data:/backup/hub-prod:ro
       - hub-stg_data:/backup/hub-stg:ro
       - postgres_data:/backup/postgres:ro
+      - prometheus_data:/backup/prometheus:ro
       - /var/run/docker.sock:/var/run/docker.sock:ro
 
 volumes:
@@ -28,4 +29,6 @@ volumes:
   hub-stg_data:
     external: true
   postgres_data:
+    external: true
+  prometheus_data:
     external: true

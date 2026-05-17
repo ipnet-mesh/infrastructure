@@ -36,6 +36,7 @@ services:
         exec /bin/prometheus \
           --config.file=/etc/prometheus/prometheus.yml \
           --storage.tsdb.path=/prometheus \
+          --storage.tsdb.retention.time=30d \
           --web.external-url=https://metrics.${ROOT_DOMAIN}
     labels:
       - "traefik.enable=true"
@@ -77,3 +78,4 @@ networks:
 
 volumes:
   prometheus_data:
+    external: true

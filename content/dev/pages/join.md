@@ -137,5 +137,3 @@ docker compose logs -f
 ```
 
 You should see log output confirming a successful MQTT connection to `mqtt.ipnt.uk` and packets being published as MeshCore traffic is received over LoRa.
-
-
