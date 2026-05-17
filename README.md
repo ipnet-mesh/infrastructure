@@ -41,14 +41,14 @@ All services connect to an external `proxy-net` Docker network. Infrastructure s
 
 ### Components
 
-| Component | Location | Description |
-|-----------|----------|-------------|
-| **Traefik** | `infrastructure/` | Reverse proxy with automatic HTTPS via Cloudflare DNS challenge |
-| **MQTT Broker** | `infrastructure/` | Shared MeshCore MQTT Broker (WebSocket-only) for all hub instances |
-| **Volume Backup** | `infrastructure/` | Daily volume snapshots to Backblaze B2 via `offen/docker-volume-backup` |
-| **Monitoring** | `infrastructure/` | Prometheus and Alertmanager scraping hub API metrics with Discord alerts |
-| **LogTo** | `infrastructure/` | Self-hosted OIDC identity provider with admin console and core endpoint |
-| **Hub Instances** | Separate directories | Independent MeshCore Hub stacks (collector, API, web) |
+| Component         | Location             | Description                                                              |
+| ----------------- | -------------------- | ------------------------------------------------------------------------ |
+| **Traefik**       | `infrastructure/`    | Reverse proxy with automatic HTTPS via Cloudflare DNS challenge          |
+| **MQTT Broker**   | `infrastructure/`    | Shared MeshCore MQTT Broker (WebSocket-only) for all hub instances       |
+| **Volume Backup** | `infrastructure/`    | Daily volume snapshots to Backblaze B2 via `offen/docker-volume-backup`  |
+| **Monitoring**    | `infrastructure/`    | Prometheus and Alertmanager scraping hub API metrics with Discord alerts |
+| **LogTo**         | `infrastructure/`    | Self-hosted OIDC identity provider with admin console and core endpoint  |
+| **Hub Instances** | Separate directories | Independent MeshCore Hub stacks (collector, API, web)                    |
 
 ### Shared Resources
 
@@ -102,6 +102,7 @@ B2_SECRET_ACCESS_KEY=your-b2-secret-key
 docker network create proxy-net
 docker volume create acme
 docker volume create postgres_data
+docker volume create prometheus_data
 ```
 
 ### 3. Start Infrastructure Services
@@ -203,10 +204,10 @@ docker compose \
 
 Each instance must have a unique `COMPOSE_PROJECT_NAME`. This prefixes all container names and Docker volumes, preventing conflicts:
 
-| Instance | `COMPOSE_PROJECT_NAME` | `TRAEFIK_DOMAIN` | `IMAGE_VERSION` | Monitoring |
-|----------|------------------------|------------------|-----------------|------------|
-| Production | `hub-prod` | `ipnt.uk` | `v0.9.0` | Yes (infrastructure stack) |
-| Staging | `hub-stg` | `beta.ipnt.uk` | `main` | No |
+| Instance   | `COMPOSE_PROJECT_NAME` | `TRAEFIK_DOMAIN` | `IMAGE_VERSION` | Monitoring                 |
+| ---------- | ---------------------- | ---------------- | --------------- | -------------------------- |
+| Production | `hub-prod`             | `ipnt.uk`        | `v0.9.0`        | Yes (infrastructure stack) |
+| Staging    | `hub-stg`              | `beta.ipnt.uk`   | `main`          | No                         |
 
 Both instances ingest the same MQTT messages into their own independent databases.
 
@@ -216,51 +217,51 @@ Both instances ingest the same MQTT messages into their own independent database
 
 These are set in `infrastructure/.env` and apply to Traefik and the shared MQTT broker.
 
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `ROOT_DOMAIN` | Root domain for TLS certificates and MQTT routing | Required |
-| `DNS_PROVIDER` | DNS provider for ACME DNS challenge | `cloudflare` |
-| `DNS_API_EMAIL` | Cloudflare account email | Required |
-| `DNS_API_TOKEN` | Cloudflare DNS API token | Required |
-| `ACME_EMAIL` | Email for Let's Encrypt certificates | Required |
-| `TRAEFIK_HTTP_PORT` | Host port for HTTP (redirects to HTTPS) | `80` |
-| `TRAEFIK_HTTPS_PORT` | Host port for HTTPS | `443` |
-| `TRAEFIK_LOG_LEVEL` | Traefik log level (`DEBUG`, `INFO`, `WARN`, `ERROR`) | `INFO` |
-| `MQTT_PORT` | MQTT WebSocket port (container) | `1883` |
-| `MQTT_USERNAME` | MQTT subscriber username | Required |
-| `MQTT_PASSWORD` | MQTT subscriber password | Required |
-| `MQTT_TOKEN_AUDIENCE` | JWT audience for authentication tokens | `mqtt.localhost` |
-| `POSTGRES_IMAGE_TAG` | PostgreSQL Docker image tag | `17-alpine` |
-| `POSTGRES_USER` | PostgreSQL superuser username | Required |
-| `POSTGRES_PASSWORD` | PostgreSQL superuser password | Required |
-| `B2_ENDPOINT` | Backblaze B2 S3-compatible endpoint | Required |
-| `B2_BUCKET_NAME` | B2 bucket name for volume backups | Required |
-| `B2_ACCESS_KEY_ID` | B2 application key ID | Required |
-| `B2_SECRET_ACCESS_KEY` | B2 application key secret | Required |
-| `HUB_API_READ_KEY` | Hub API key for Prometheus basic auth | Required |
-| `HUB_API_TARGET` | Hub API container target for Prometheus | `hub-prod-api:8000` |
-| `DISCORD_WEBHOOK_URL` | Discord webhook URL for Alertmanager alerts | Required |
-| `LOGTO_IMAGE_TAG` | LogTo Docker image tag | `latest` |
-| `POSTGRES_LOGTO_USERNAME` | PostgreSQL user for LogTo | `logto` |
-| `POSTGRES_LOGTO_PASSWORD` | PostgreSQL password for LogTo | Required |
-| `PRIVATE_KEY_ROTATION_GRACE_PERIOD` | OIDC key rotation grace period (seconds) | `3600` |
+| Variable                            | Description                                          | Default             |
+| ----------------------------------- | ---------------------------------------------------- | ------------------- |
+| `ROOT_DOMAIN`                       | Root domain for TLS certificates and MQTT routing    | Required            |
+| `DNS_PROVIDER`                      | DNS provider for ACME DNS challenge                  | `cloudflare`        |
+| `DNS_API_EMAIL`                     | Cloudflare account email                             | Required            |
+| `DNS_API_TOKEN`                     | Cloudflare DNS API token                             | Required            |
+| `ACME_EMAIL`                        | Email for Let's Encrypt certificates                 | Required            |
+| `TRAEFIK_HTTP_PORT`                 | Host port for HTTP (redirects to HTTPS)              | `80`                |
+| `TRAEFIK_HTTPS_PORT`                | Host port for HTTPS                                  | `443`               |
+| `TRAEFIK_LOG_LEVEL`                 | Traefik log level (`DEBUG`, `INFO`, `WARN`, `ERROR`) | `INFO`              |
+| `MQTT_PORT`                         | MQTT WebSocket port (container)                      | `1883`              |
+| `MQTT_USERNAME`                     | MQTT subscriber username                             | Required            |
+| `MQTT_PASSWORD`                     | MQTT subscriber password                             | Required            |
+| `MQTT_TOKEN_AUDIENCE`               | JWT audience for authentication tokens               | `mqtt.localhost`    |
+| `POSTGRES_IMAGE_TAG`                | PostgreSQL Docker image tag                          | `17-alpine`         |
+| `POSTGRES_USER`                     | PostgreSQL superuser username                        | Required            |
+| `POSTGRES_PASSWORD`                 | PostgreSQL superuser password                        | Required            |
+| `B2_ENDPOINT`                       | Backblaze B2 S3-compatible endpoint                  | Required            |
+| `B2_BUCKET_NAME`                    | B2 bucket name for volume backups                    | Required            |
+| `B2_ACCESS_KEY_ID`                  | B2 application key ID                                | Required            |
+| `B2_SECRET_ACCESS_KEY`              | B2 application key secret                            | Required            |
+| `HUB_API_READ_KEY`                  | Hub API key for Prometheus basic auth                | Required            |
+| `HUB_API_TARGET`                    | Hub API container target for Prometheus              | `hub-prod-api:8000` |
+| `DISCORD_WEBHOOK_URL`               | Discord webhook URL for Alertmanager alerts          | Required            |
+| `LOGTO_IMAGE_TAG`                   | LogTo Docker image tag                               | `latest`            |
+| `POSTGRES_LOGTO_USERNAME`           | PostgreSQL user for LogTo                            | `logto`             |
+| `POSTGRES_LOGTO_PASSWORD`           | PostgreSQL password for LogTo                        | Required            |
+| `PRIVATE_KEY_ROTATION_GRACE_PERIOD` | OIDC key rotation grace period (seconds)             | `3600`              |
 
 ### Per-Instance Variables
 
 These are set in each hub instance's `.env`. See [MeshCore Hub's `.env.example`](https://github.com/ipnet-mesh/meshcore-hub/blob/main/.env.example) for the full list.
 
-| Variable | Description | Example |
-|----------|-------------|---------|
-| `COMPOSE_PROJECT_NAME` | Unique project name (prefixes containers/volumes) | `hub-prod` |
-| `TRAEFIK_DOMAIN` | Domain for Traefik routing | `ipnt.uk` |
-| `IMAGE_VERSION` | Docker image tag | `v0.9.0` or `main` |
-| `MQTT_HOST` | MQTT broker hostname (use `mqtt` for shared broker) | `mqtt` |
-| `MQTT_PORT` | MQTT broker port | `1883` |
-| `MQTT_USERNAME` | MQTT subscriber username (must match infrastructure) | `mqttuser` |
-| `MQTT_PASSWORD` | MQTT subscriber password (must match infrastructure) | |
-| `MQTT_TOKEN_AUDIENCE` | JWT audience (must match infrastructure) | `mqtt.example.com` |
-| `CONTENT_HOME` | Path to shared content directory | `../infrastructure/content` |
-| `SEED_HOME` | Path to seed data directory | `./seed` |
+| Variable               | Description                                          | Example                     |
+| ---------------------- | ---------------------------------------------------- | --------------------------- |
+| `COMPOSE_PROJECT_NAME` | Unique project name (prefixes containers/volumes)    | `hub-prod`                  |
+| `TRAEFIK_DOMAIN`       | Domain for Traefik routing                           | `ipnt.uk`                   |
+| `IMAGE_VERSION`        | Docker image tag                                     | `v0.9.0` or `main`          |
+| `MQTT_HOST`            | MQTT broker hostname (use `mqtt` for shared broker)  | `mqtt`                      |
+| `MQTT_PORT`            | MQTT broker port                                     | `1883`                      |
+| `MQTT_USERNAME`        | MQTT subscriber username (must match infrastructure) | `mqttuser`                  |
+| `MQTT_PASSWORD`        | MQTT subscriber password (must match infrastructure) |                             |
+| `MQTT_TOKEN_AUDIENCE`  | JWT audience (must match infrastructure)             | `mqtt.example.com`          |
+| `CONTENT_HOME`         | Path to shared content directory                     | `../infrastructure/content` |
+| `SEED_HOME`            | Path to seed data directory                          | `./seed`                    |
 
 ## Operational Commands
 
