@@ -44,6 +44,7 @@ All services connect to an external `proxy-net` Docker network. Infrastructure s
 | Component         | Location             | Description                                                              |
 | ----------------- | -------------------- | ------------------------------------------------------------------------ |
 | **Traefik**       | `infrastructure/`    | Reverse proxy with automatic HTTPS via Cloudflare DNS challenge          |
+| **PostgreSQL**    | `infrastructure/`    | Shared database server for all services on proxy-net                    |
 | **MQTT Broker**   | `infrastructure/`    | Shared MeshCore MQTT Broker (WebSocket-only) for all hub instances       |
 | **Volume Backup** | `infrastructure/`    | Daily volume snapshots to Backblaze B2 via `offen/docker-volume-backup`  |
 | **Monitoring**    | `infrastructure/`    | Prometheus and Alertmanager scraping hub API metrics with Discord alerts |
@@ -55,8 +56,8 @@ All services connect to an external `proxy-net` Docker network. Infrastructure s
 - **TLS certificates** — Managed by Traefik via Let's Encrypt with Cloudflare DNS challenge
 - **MQTT broker** — All hub instances connect to the same broker and ingest the same mesh traffic
 - **Content** — `infrastructure/content/` mounted into each hub instance for shared pages and media
-- **Volume backups** — Daily snapshots of `hub-prod_data`, `hub-stg_data`, and `postgres_data` volumes to Backblaze B2 with 30-day retention
-- **Identity provider** — LogTo provides OIDC authentication for all services at `id.<domain>` with admin at `auth.<domain>`
+- **Volume backups** — Daily snapshots of `hub-prod_data`, `hub-stg_data`, `postgres_data`, and `prometheus_data` volumes to Backblaze B2 with 30-day retention
+- **Identity provider** — LogTo provides OIDC authentication for all services at `auth.<domain>` with admin at `id.<domain>`
 
 ## Prerequisites
 
@@ -328,6 +329,7 @@ infrastructure/
 ├── compose/
 │   ├── traefik.yml              # Traefik reverse proxy
 │   ├── mqtt.yml                 # Shared MeshCore MQTT broker
+│   ├── postgres.yml             # PostgreSQL database server
 │   ├── monitoring.yml           # Prometheus and Alertmanager
 │   ├── logto.yml                # LogTo identity provider
 │   └── backup.yml               # Volume backup to Backblaze B2
@@ -335,8 +337,15 @@ infrastructure/
 │   └── traefik/
 │       └── config.yml           # Traefik static config (rate limiting)
 ├── content/                     # Shared content (mounted by hub instances)
-│   ├── media/
-│   └── pages/
+│   ├── prod/                    # Production content
+│   │   ├── media/
+│   │   └── pages/
+│   ├── stg/                     # Staging content
+│   │   ├── media/
+│   │   └── pages/
+│   └── dev/                     # Development content
+│       ├── media/
+│       └── pages/
 ├── etc/
 │   ├── postgres/
 │   │   └── init/                # Init SQL scripts (run on first start)

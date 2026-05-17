@@ -1,6 +1,16 @@
-# CLAUDE.md
+# AGENTS.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+This file provides guidance to agentic development tools when working with code in this repository.
+
+> **PRODUCTION ENVIRONMENT — READ BEFORE MAKING ANY CHANGES**
+>
+> This repository lives on and is deployed directly to a **production server**. Every compose file, config change, and script in this repo affects live services.
+>
+> - **Do NOT run `docker compose up`, `down`, `restart`, or any other lifecycle commands** as a verification step. These commands restart or recreate live containers and will impact production traffic.
+> - **Do NOT run test suites, health checks, or smoke tests locally** — there is no local development environment for this stack. Verification must happen against the live deployment with care.
+> - **Changes should be reviewed carefully before applying.** Prefer editing files, then having the operator manually apply them on the server.
+> - When editing configs (Traefik, Prometheus, Alertmanager, etc.), note that the service must be reloaded on the server for changes to take effect — do not attempt this yourself.
+> - If unsure whether a command is safe to run, **ask first**.
 
 ## Project Overview
 
@@ -54,7 +64,7 @@ infrastructure/                hub-prod/              hub-stg/
   - Data stored in `postgres_data` volume (included in daily backups)
 
 - **Backup**: Volume backup to Backblaze B2 (via `offen/docker-volume-backup`)
-  - Daily snapshots of `hub-prod_data`, `hub-stg_data`, and `postgres_data` volumes
+  - Daily snapshots of `hub-prod_data`, `hub-stg_data`, `postgres_data`, and `prometheus_data` volumes
   - 30-day retention with automatic pruning
   - S3-compatible B2 endpoint
 
@@ -65,8 +75,8 @@ infrastructure/                hub-prod/              hub-stg/
   - Scrape target configurable via `HUB_API_TARGET` (default: `hub-prod-api:8000`)
 
 - **LogTo**: Self-hosted OIDC identity provider
-  - Admin console exposed at `auth.<domain>` via Traefik (port 3001)
-  - Core OIDC endpoint exposed at `id.<domain>` via Traefik (port 3002)
+  - Core OIDC endpoint exposed at `auth.<domain>` via Traefik (port 3001)
+  - Admin console exposed at `id.<domain>` via Traefik (port 3002)
   - Uses shared PostgreSQL with dedicated database and user
 
 - **Hub Instances**: Independent MeshCore Hub stacks (collector, API, web)
@@ -87,6 +97,9 @@ infrastructure/                hub-prod/              hub-stg/
 ### Infrastructure Services
 
 ```bash
+# Start PostgreSQL
+docker compose -f compose/postgres.yml up -d
+
 # Start Traefik
 docker compose -f compose/traefik.yml up -d
 
@@ -103,6 +116,7 @@ docker compose -f compose/monitoring.yml up -d
 docker compose -f compose/logto.yml up -d
 
 # Stop a service
+docker compose -f compose/postgres.yml down
 docker compose -f compose/traefik.yml down
 docker compose -f compose/mqtt.yml down
 docker compose -f compose/backup.yml down
@@ -110,9 +124,9 @@ docker compose -f compose/monitoring.yml down
 docker compose -f compose/logto.yml down
 
 # View logs
+docker compose -f compose/postgres.yml logs -f
 docker compose -f compose/traefik.yml logs -f
 docker compose -f compose/mqtt.yml logs -f
-docker compose -f compose/postgres.yml logs -f
 docker compose -f compose/backup.yml logs -f
 docker compose -f compose/monitoring.yml logs -f
 docker compose -f compose/logto.yml logs -f
@@ -166,6 +180,9 @@ Copy `.env.example` to `.env` and configure:
 | `MQTT_USERNAME`                     | MQTT subscriber username                                          |
 | `MQTT_PASSWORD`                     | MQTT subscriber password                                          |
 | `MQTT_TOKEN_AUDIENCE`               | JWT audience for auth tokens                                      |
+| `POSTGRES_IMAGE_TAG`                | PostgreSQL Docker image tag (default: `17-alpine`)                |
+| `POSTGRES_USER`                     | PostgreSQL superuser username                                      |
+| `POSTGRES_PASSWORD`                 | PostgreSQL superuser password                                      |
 | `B2_ENDPOINT`                       | Backblaze B2 S3 endpoint (e.g., `s3.us-east-005.backblazeb2.com`) |
 | `B2_BUCKET_NAME`                    | B2 bucket name for backups                                        |
 | `B2_ACCESS_KEY_ID`                  | B2 application key ID                                             |
