@@ -90,7 +90,7 @@ Welcome to the Ipswich MeshCore Network!
 
 You can contribute to IPNet by running a [LetsMesh Observer](https://github.com/agessaman/meshcore-packet-capture) — a lightweight Docker container that captures MeshCore RF traffic from a connected LoRa device and publishes decoded packets to IPNet's MQTT broker. Deploying observers throughout the region ensures MeshCore events (advertisements, messages, and nodes) are captured and not missed, feeding our network map, dashboard, and message history.
 
-Enabling the LetsMesh EU option also contributes your observations to the [LetsMesh Analyzer](https://letsmesh.com/).
+You can also optionally contribute to [LetsMesh Analyzer](https://letsmesh.com/) and [MeshRank.net](https://meshrank.net/become-an-observer).
 
 ### Prerequisites
 
@@ -112,17 +112,19 @@ cp .env.example .env
 
 Edit `.env` with the following values:
 
-| Variable               | Value          | Description                                                                      |
-| ---------------------- | -------------- | -------------------------------------------------------------------------------- |
-| `SERIAL_PORT`          | `/dev/ttyUSB0` | Device path for your LoRa device. Use `/dev/serial/by-id/...` for a stable path. |
-| `IATA`                 | e.g. `STN`     | 3-letter airport code for your location                                          |
-| `ORIGIN`               | `observer`     | Observer identifier (or choose a unique name)                                    |
-| `ENABLE_LETSMESH_EU`   | `true`         | Contribute to LetsMesh EU Analyzer (recommended for EU/UK)                       |
-| `ENABLE_LETSMESH_US`   | `false`        | Contribute to LetsMesh US Analyzer (optional)                                    |
-| `CUSTOM_MQTT_HOST`     | `mqtt.ipnt.uk` | IPNet's public MQTT broker                                                       |
-| `CUSTOM_MQTT_PORT`     | `443`          | TLS/WSS port                                                                     |
-| `CUSTOM_MQTT_TLS`      | `true`         | Required for remote connections                                                  |
-| `CUSTOM_MQTT_AUDIENCE` | `mqtt.ipnt.uk` | Must match the broker's token audience                                           |
+| Variable              | Value          | Description                                                                      |
+| --------------------- | -------------- | -------------------------------------------------------------------------------- |
+| `SERIAL_PORT`         | `/dev/ttyUSB0` | Device path for your LoRa device. Use `/dev/serial/by-id/...` for a stable path. |
+| `IATA`                | e.g. `STN`     | 3-letter airport code for your location                                          |
+| `ORIGIN`              | `observer`     | Observer identifier (or choose a unique name)                                    |
+| `IPNET_ENABLE`        | `true`         | Contribute to IPNet MeshCore Hub MQTT broker                                     |
+| `LETSMESH_ENABLE`     | `false`        | Contribute to LetsMesh Analyzer                                                  |
+| `LETSMESH_REGION`     | `eu`           | LetsMesh MQTT Region (`eu`/`us`)                                                 |
+| `MESHRANK_ENABLE`     | `false`        | Contribute to MeshRank.net MQTT broker                                           |
+| `MESHRANK_UPLINK_KEY` | `A1B2C3D4...`  | MeshRank.net MQTT credentials (https://meshrank.net/become-an-observer)          |
+
+- For LetsMesh Analyzer, enable `LETSMESH_ENABLE` and configure the `LETSMESH_REGION` variable to either `eu` or `us` region.
+- For MeshRank.net, register an account, enable `MESHRANK_ENABLE` and set `MESHRANK_UPLINK_KEY` to your generated MQTT credential.
 
 Start the observer:
 
