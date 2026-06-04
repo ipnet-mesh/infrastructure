@@ -84,7 +84,15 @@ Once your device is flashed and paired:
 4. Configure your radio settings/profile for your region
 5. You should start seeing other nodes on the network
 
-Welcome to the Ipswich MeshCore Network!
+## Companion Configuration
+
+### Regions
+
+It is possible to configure the regional scope for individual channels on your companion node. Configuration is done on a per-channel basis.
+
+We recommend setting region scope on any public/general channels (e.g. Public, Test, Jokes etc) to `gb` (UK wide). Any local regional channels (e.g. `#eastofengland`, `#gb-est`) should be scoped with the appropriate regional scope, e.g. `gb-est` (East of England).
+
+The default region scope (located in Experimental settings) should be left unset/empty.
 
 ## Contributing as a Remote Observer
 
