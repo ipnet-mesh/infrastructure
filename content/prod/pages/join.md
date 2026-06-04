@@ -92,7 +92,7 @@ It is possible to configure the regional scope for individual channels on your c
 
 We recommend setting region scope on any public/general channels (e.g. Public, Test, Jokes etc) to `gb` (UK wide). Any local regional channels (e.g. `#eastofengland`, `#gb-est`) should be scoped with the appropriate regional scope, e.g. `gb-est` (East of England).
 
-The default region scope (located in Experimental settings) should be left unset/empty.
+The default region scope (located in Experimental settings) should be set to your local region: `gb-est`.
 
 ## Contributing as a Remote Observer
 
