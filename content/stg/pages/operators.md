@@ -10,11 +10,13 @@ Operators are trusted community members who manage official IPNet repeater nodes
 
 ## Repeater Configuration
 
-All official IPNet repeaters must be configured as follows.
+All official IPNet repeaters should be configured as follows using the Repeater CLI:
 
-Repeaters must be configured with `gb` and `gb-est` regions, with `gb-est` as a child of `gb`. The repeater's home region should be set to `gb-est`. Unscoped region flooding should be kept enabled for the foreseeable future.
+### Regions
 
-Using the Repeater CLI:
+Repeaters should be configured with `gb` and `gb-est` regions, with `gb-est` as a child of `gb`.
+The repeater's home region should be set to `gb-est`.
+Unscoped region flooding should be kept enabled for the foreseeable future.
 
 ```
 region put gb
@@ -25,7 +27,7 @@ region home gb-est
 region save
 ```
 
-### Flood Adverts
+### Advertisements
 
 Set flood adverts to **50 hours or more** and zero-hop adverts to **0** (disabled).
 
@@ -40,6 +42,17 @@ set advert.interval 0
 set dutycycle 10
 set path.hash.mode 1
 set loop.detect minimal
+```
+
+### Flood Configuration
+
+Repeater firmware from **v1.16 onwards** introduced options for managing flood
+hop limits for messages (scoped and unscoped) and advertisements:
+
+```
+set flood.max 10
+set flood.max.unscoped 6
+set flood.max.advert 10
 ```
 
 ## Becoming an Operator
