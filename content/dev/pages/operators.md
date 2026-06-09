@@ -44,7 +44,7 @@ set path.hash.mode 1
 set loop.detect minimal
 ```
 
-### Flood Configuration
+### Flooding
 
 Repeater firmware from **v1.16 onwards** introduced options for managing flood
 hop limits for messages (scoped and unscoped) and advertisements:
