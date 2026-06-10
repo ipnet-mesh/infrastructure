@@ -21,6 +21,7 @@ This is the infrastructure repository for IPNet Mesh — a Docker Compose-based 
 - **MeshCore MQTT Broker** shared across all hub instances
 - **LogTo** self-hosted OIDC identity provider
 - **Prometheus & Alertmanager** monitoring hub API metrics with Discord alerts
+- **Redis** shared in-memory cache with AOF persistence and LRU eviction
 - **Volume Backup** to Backblaze B2 via `offen/docker-volume-backup`
 
 Hub instances (MeshCore Hub) are deployed as separate independent compose stacks, each started from their own directory with wget'd compose files and a local `.env`.
@@ -37,6 +38,7 @@ infrastructure/                hub-prod/              hub-stg/
 │   ├── postgres.yml
 │   ├── logto.yml
 │   ├── monitoring.yml
+│   ├── redis.yml
 │   └── backup.yml
 ├── config/
 ├── content/  ← shared volume
@@ -79,6 +81,11 @@ infrastructure/                hub-prod/              hub-stg/
   - Admin console exposed at `id.<domain>` via Traefik (port 3002)
   - Uses shared PostgreSQL with dedicated database and user
 
+- **Redis**: Shared in-memory cache
+  - Accessible to all services on `proxy-net` at hostname `redis` on port 6379
+  - AOF persistence with 128 MB memory cap and `allkeys-lru` eviction
+  - Data stored in `redis_data` volume (not included in backups — ephemeral cache)
+
 - **Hub Instances**: Independent MeshCore Hub stacks (collector, API, web)
   - Each has its own `.env` with unique `COMPOSE_PROJECT_NAME`
   - Storage via Docker volumes (namespaced per project)
@@ -115,6 +122,9 @@ docker compose -f compose/monitoring.yml up -d
 # Start LogTo identity provider
 docker compose -f compose/logto.yml up -d
 
+# Start Redis cache
+docker compose -f compose/redis.yml up -d
+
 # Stop a service
 docker compose -f compose/postgres.yml down
 docker compose -f compose/traefik.yml down
@@ -122,6 +132,7 @@ docker compose -f compose/mqtt.yml down
 docker compose -f compose/backup.yml down
 docker compose -f compose/monitoring.yml down
 docker compose -f compose/logto.yml down
+docker compose -f compose/redis.yml down
 
 # View logs
 docker compose -f compose/postgres.yml logs -f
@@ -130,6 +141,7 @@ docker compose -f compose/mqtt.yml logs -f
 docker compose -f compose/backup.yml logs -f
 docker compose -f compose/monitoring.yml logs -f
 docker compose -f compose/logto.yml logs -f
+docker compose -f compose/redis.yml logs -f
 ```
 
 ### Hub Instances
@@ -158,6 +170,7 @@ docker network create proxy-net
 docker volume create acme
 docker volume create postgres_data
 docker volume create prometheus_data
+docker volume create redis_data
 ```
 
 ## Environment Variables
@@ -215,6 +228,7 @@ Copy `.env.example` to `.env` and configure:
 | `compose/postgres.yml`              | PostgreSQL database server            |
 | `compose/monitoring.yml`            | Prometheus and Alertmanager           |
 | `compose/logto.yml`                 | LogTo identity provider               |
+| `compose/redis.yml`                | Redis shared cache service definition  |
 | `compose/backup.yml`                | Volume backup to Backblaze B2         |
 | `config/traefik/config.yml`         | Traefik static config (rate limiting) |
 | `etc/prometheus/prometheus.yml`     | Prometheus scrape and alerting config |
