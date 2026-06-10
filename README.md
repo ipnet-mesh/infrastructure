@@ -34,6 +34,11 @@ All services connect to an external `proxy-net` Docker network. Infrastructure s
                     │  Alertmanager    │
                     │  (Discord alerts)│
                     └──────────────────┘
+                            │
+                    ┌───────▼────────┐
+                    │     Redis      │
+                    │  (shared cache)│
+                    └────────────────┘
             │                │                  │
             └────────────────┼──────────────────┘
                        proxy-net (external)
@@ -48,6 +53,7 @@ All services connect to an external `proxy-net` Docker network. Infrastructure s
 | **MQTT Broker**   | `infrastructure/`    | Shared MeshCore MQTT Broker (WebSocket-only) for all hub instances       |
 | **Volume Backup** | `infrastructure/`    | Daily volume snapshots to Backblaze B2 via `offen/docker-volume-backup`  |
 | **Monitoring**    | `infrastructure/`    | Prometheus and Alertmanager scraping hub API metrics with Discord alerts |
+| **Redis**         | `infrastructure/`    | Shared in-memory cache with AOF persistence and LRU eviction            |
 | **LogTo**         | `infrastructure/`    | Self-hosted OIDC identity provider with admin console and core endpoint  |
 | **Hub Instances** | Separate directories | Independent MeshCore Hub stacks (collector, API, web)                    |
 
@@ -104,6 +110,7 @@ docker network create proxy-net
 docker volume create acme
 docker volume create postgres_data
 docker volume create prometheus_data
+docker volume create redis_data
 ```
 
 ### 3. Start Infrastructure Services
@@ -126,6 +133,9 @@ docker compose -f compose/monitoring.yml up -d
 
 # Start LogTo identity provider
 docker compose -f compose/logto.yml up -d
+
+# Start Redis cache
+docker compose -f compose/redis.yml up -d
 ```
 
 ### 4. Verify
@@ -276,6 +286,7 @@ docker compose -f compose/postgres.yml up -d
 docker compose -f compose/backup.yml up -d
 docker compose -f compose/monitoring.yml up -d
 docker compose -f compose/logto.yml up -d
+docker compose -f compose/redis.yml up -d
 
 # Stop services
 docker compose -f compose/traefik.yml down
@@ -284,6 +295,7 @@ docker compose -f compose/postgres.yml down
 docker compose -f compose/backup.yml down
 docker compose -f compose/monitoring.yml down
 docker compose -f compose/logto.yml down
+docker compose -f compose/redis.yml down
 
 # View logs
 docker compose -f compose/traefik.yml logs -f
@@ -292,6 +304,7 @@ docker compose -f compose/postgres.yml logs -f
 docker compose -f compose/backup.yml logs -f
 docker compose -f compose/monitoring.yml logs -f
 docker compose -f compose/logto.yml logs -f
+docker compose -f compose/redis.yml logs -f
 
 # Trigger a manual backup
 docker compose -f compose/backup.yml exec backup backup
@@ -332,6 +345,7 @@ infrastructure/
 │   ├── postgres.yml             # PostgreSQL database server
 │   ├── monitoring.yml           # Prometheus and Alertmanager
 │   ├── logto.yml                # LogTo identity provider
+│   ├── redis.yml                # Redis shared cache
 │   └── backup.yml               # Volume backup to Backblaze B2
 ├── config/
 │   └── traefik/
