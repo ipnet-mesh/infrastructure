@@ -67,8 +67,9 @@ infrastructure/                hub-prod/              hub-stg/
   - Logical backups via `pg_dump`: the `docker-volume-backup.archive-pre` label runs `pg_dump -Fc` per non-template database into the `pgdump_data` volume (`/backups`); a `copy-post` hook removes the dumps after upload
 
 - **Backup**: Volume backup to Backblaze B2 (via `offen/docker-volume-backup`)
-  - Daily snapshots of `hub-prod_data`, `hub-stg_data`, `pgdump_data` (PostgreSQL logical dumps), and `prometheus_data` volumes
+  - Daily snapshots of: hub SQLite volumes (`hub-prod_data`, `hub-stg_data` → `/backup/sqlite/{prod,stg}`), PostgreSQL logical dumps (`pgdump_data` → `/backup/postgres`), Prometheus TSDB (`/backup/prometheus`), and host deployment config directories `${HOME}/data/apps/ipnet/{infrastructure,meshcore-hub}` → `/backup/{infrastructure,deployments}` (incl. their `.env` files)
   - `EXEC_FORWARD_OUTPUT=true` streams `pg_dump` output into the backup container logs
+  - Any container labeled `docker-volume-backup.stop-during-backup=true` is stopped before snapshotting and restarted after (currently: Prometheus, for a crash-safe TSDB copy)
   - 30-day retention with automatic pruning
   - S3-compatible B2 endpoint
 
@@ -77,6 +78,7 @@ infrastructure/                hub-prod/              hub-stg/
   - Alertmanager routes alerts to Discord via Slack-compatible webhook
   - Exposed at `metrics.<domain>` and `alerts.<domain>` via Traefik
   - Scrape target configurable via `HUB_API_TARGET` (default: `hub-prod-api:8000`)
+  - Prometheus is stopped during the daily backup (labeled `docker-volume-backup.stop-during-backup=true`) so its TSDB volume is snapshotted consistently
 
 - **LogTo**: Self-hosted OIDC identity provider
   - Core OIDC endpoint exposed at `auth.<domain>` via Traefik (port 3001)
