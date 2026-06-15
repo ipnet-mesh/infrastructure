@@ -201,6 +201,10 @@ Copy `.env.example` to `.env` and configure:
 | `POSTGRES_IMAGE_TAG`                | PostgreSQL Docker image tag (default: `17-alpine`)                |
 | `POSTGRES_USER`                     | PostgreSQL superuser username                                      |
 | `POSTGRES_PASSWORD`                 | PostgreSQL superuser password                                      |
+| `POSTGRES_LOGTO_USERNAME` | PostgreSQL user for LogTo (default: `logto`) |
+| `POSTGRES_LOGTO_PASSWORD` | PostgreSQL password for LogTo |
+| `POSTGRES_MESHCOREHUB_USERNAME` | PostgreSQL user for MeshCore Hub (default: `meshcorehub`) |
+| `POSTGRES_MESHCOREHUB_PASSWORD` | PostgreSQL password for MeshCore Hub |
 | `B2_ENDPOINT`                       | Backblaze B2 S3 endpoint (e.g., `s3.us-east-005.backblazeb2.com`) |
 | `B2_BUCKET_NAME`                    | B2 bucket name for backups                                        |
 | `B2_ACCESS_KEY_ID`                  | B2 application key ID                                             |
@@ -209,9 +213,7 @@ Copy `.env.example` to `.env` and configure:
 | `HUB_API_TARGET`                    | Hub API container target (default: `hub-prod-api:8000`)           |
 | `DISCORD_WEBHOOK_URL`               | Discord webhook URL for Alertmanager alerts                       |
 | `LOGTO_IMAGE_TAG`                   | LogTo Docker image tag (default: `latest`)                        |
-| `POSTGRES_LOGTO_USERNAME`           | PostgreSQL user for LogTo (default: `logto`)                      |
-| `POSTGRES_LOGTO_PASSWORD`           | PostgreSQL password for LogTo                                     |
-| `PRIVATE_KEY_ROTATION_GRACE_PERIOD` | OIDC key rotation grace period in seconds (default: `3600`)       |
+| `LOGTO_PRIVATE_KEY_ROTATION_GRACE_PERIOD` | OIDC key rotation grace period in seconds (default: `3600`) |
 
 ### Per-Instance Variables (in each hub instance's `.env`)
 

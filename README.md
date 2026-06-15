@@ -246,6 +246,10 @@ These are set in `infrastructure/.env` and apply to Traefik and the shared MQTT 
 | `POSTGRES_IMAGE_TAG`                | PostgreSQL Docker image tag                          | `17-alpine`         |
 | `POSTGRES_USER`                     | PostgreSQL superuser username                        | Required            |
 | `POSTGRES_PASSWORD`                 | PostgreSQL superuser password                        | Required            |
+| `POSTGRES_LOGTO_USERNAME` | PostgreSQL user for LogTo | `logto` |
+| `POSTGRES_LOGTO_PASSWORD` | PostgreSQL password for LogTo | Required |
+| `POSTGRES_MESHCOREHUB_USERNAME` | PostgreSQL user for MeshCore Hub | `meshcorehub` |
+| `POSTGRES_MESHCOREHUB_PASSWORD` | PostgreSQL password for MeshCore Hub | Required |
 | `B2_ENDPOINT`                       | Backblaze B2 S3-compatible endpoint                  | Required            |
 | `B2_BUCKET_NAME`                    | B2 bucket name for volume backups                    | Required            |
 | `B2_ACCESS_KEY_ID`                  | B2 application key ID                                | Required            |
@@ -254,9 +258,7 @@ These are set in `infrastructure/.env` and apply to Traefik and the shared MQTT 
 | `HUB_API_TARGET`                    | Hub API container target for Prometheus              | `hub-prod-api:8000` |
 | `DISCORD_WEBHOOK_URL`               | Discord webhook URL for Alertmanager alerts          | Required            |
 | `LOGTO_IMAGE_TAG`                   | LogTo Docker image tag                               | `latest`            |
-| `POSTGRES_LOGTO_USERNAME`           | PostgreSQL user for LogTo                            | `logto`             |
-| `POSTGRES_LOGTO_PASSWORD`           | PostgreSQL password for LogTo                        | Required            |
-| `PRIVATE_KEY_ROTATION_GRACE_PERIOD` | OIDC key rotation grace period (seconds)             | `3600`              |
+| `LOGTO_PRIVATE_KEY_ROTATION_GRACE_PERIOD` | OIDC key rotation grace period (seconds)       | `3600`              |
 
 ### Per-Instance Variables
 
