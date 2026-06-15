@@ -18,9 +18,13 @@ services:
     restart: unless-stopped
     networks:
       - proxy-net
+    labels:
+      - docker-volume-backup.archive-pre=/bin/sh -c 'for db in $$(psql -U "$$POSTGRES_USER" -At -c "SELECT datname FROM pg_database WHERE datistemplate = false"); do pg_dump -U "$$POSTGRES_USER" -Fc -f "/backups/$$db.dump" "$$db"; done'
+      - docker-volume-backup.copy-post=/bin/sh -c 'rm -f /backups/*.dump'
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ../etc/postgres/init:/docker-entrypoint-initdb.d:ro
+      - pgdump_data:/backups
     environment:
       - POSTGRES_USER=${POSTGRES_USER:-admin}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
@@ -41,4 +45,6 @@ networks:
 
 volumes:
   postgres_data:
+    external: true
+  pgdump_data:
     external: true

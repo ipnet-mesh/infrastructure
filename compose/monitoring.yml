@@ -45,6 +45,8 @@ services:
       - "traefik.http.routers.prometheus.entrypoints=websecure"
       - "traefik.http.routers.prometheus.tls.certresolver=default"
       - "traefik.http.services.prometheus.loadbalancer.server.port=9090"
+      # Stopped by the backup container during backup for a consistent TSDB snapshot
+      - "docker-volume-backup.stop-during-backup=true"
 
   alertmanager:
     image: prom/alertmanager:latest

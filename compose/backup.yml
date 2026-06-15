@@ -1,5 +1,6 @@
 # Volume Backup to Backblaze B2
-# Daily backups of hub-prod and hub-stg data volumes
+# Daily backups of hub SQLite volumes, PostgreSQL logical dumps, Prometheus
+# TSDB, and host deployment config directories (incl. .env files)
 # Uses offen/docker-volume-backup with S3-compatible B2 endpoint
 
 services:
@@ -16,11 +17,15 @@ services:
       - BACKUP_RETENTION_DAYS=30
       - BACKUP_FILENAME=backup-%Y-%m-%dT%H-%M-%S.tar.gz
       - BACKUP_PRUNING_PREFIX=backup-
+      # Forward hook (pg_dump) stdout/stderr into the backup container logs
+      - EXEC_FORWARD_OUTPUT=true
     volumes:
-      - hub-prod_data:/backup/hub-prod:ro
-      - hub-stg_data:/backup/hub-stg:ro
-      - postgres_data:/backup/postgres:ro
+      - hub-prod_data:/backup/sqlite/prod:ro
+      - hub-stg_data:/backup/sqlite/stg:ro
+      - pgdump_data:/backup/postgres:ro
       - prometheus_data:/backup/prometheus:ro
+      - ${HOME}/data/apps/ipnet/infrastructure:/backup/infrastructure:ro
+      - ${HOME}/data/apps/ipnet/meshcore-hub:/backup/deployments:ro
       - /var/run/docker.sock:/var/run/docker.sock:ro
 
 volumes:
@@ -28,7 +33,7 @@ volumes:
     external: true
   hub-stg_data:
     external: true
-  postgres_data:
+  pgdump_data:
     external: true
   prometheus_data:
     external: true

@@ -63,10 +63,13 @@ infrastructure/                hub-prod/              hub-stg/
 - **PostgreSQL**: Shared database server
   - Accessible to all services on `proxy-net`
   - Init SQL scripts in `etc/postgres/init/` for creating service databases and users
-  - Data stored in `postgres_data` volume (included in daily backups)
+  - Data stored in `postgres_data` volume (live state, not backed up at file level)
+  - Logical backups via `pg_dump`: the `docker-volume-backup.archive-pre` label runs `pg_dump -Fc` per non-template database into the `pgdump_data` volume (`/backups`); a `copy-post` hook removes the dumps after upload
 
 - **Backup**: Volume backup to Backblaze B2 (via `offen/docker-volume-backup`)
-  - Daily snapshots of `hub-prod_data`, `hub-stg_data`, `postgres_data`, and `prometheus_data` volumes
+  - Daily snapshots of: hub SQLite volumes (`hub-prod_data`, `hub-stg_data` → `/backup/sqlite/{prod,stg}`), PostgreSQL logical dumps (`pgdump_data` → `/backup/postgres`), Prometheus TSDB (`/backup/prometheus`), and host deployment config directories `${HOME}/data/apps/ipnet/{infrastructure,meshcore-hub}` → `/backup/{infrastructure,deployments}` (incl. their `.env` files)
+  - `EXEC_FORWARD_OUTPUT=true` streams `pg_dump` output into the backup container logs
+  - Any container labeled `docker-volume-backup.stop-during-backup=true` is stopped before snapshotting and restarted after (currently: Prometheus, for a crash-safe TSDB copy)
   - 30-day retention with automatic pruning
   - S3-compatible B2 endpoint
 
@@ -75,6 +78,7 @@ infrastructure/                hub-prod/              hub-stg/
   - Alertmanager routes alerts to Discord via Slack-compatible webhook
   - Exposed at `metrics.<domain>` and `alerts.<domain>` via Traefik
   - Scrape target configurable via `HUB_API_TARGET` (default: `hub-prod-api:8000`)
+  - Prometheus is stopped during the daily backup (labeled `docker-volume-backup.stop-during-backup=true`) so its TSDB volume is snapshotted consistently
 
 - **LogTo**: Self-hosted OIDC identity provider
   - Core OIDC endpoint exposed at `auth.<domain>` via Traefik (port 3001)
@@ -169,6 +173,7 @@ docker compose -f docker-compose.yml -f docker-compose.prod.yml \
 docker network create proxy-net
 docker volume create acme
 docker volume create postgres_data
+docker volume create pgdump_data
 docker volume create prometheus_data
 docker volume create redis_data
 ```
