@@ -31,8 +31,10 @@ networks:
     external: true
 
 volumes:
-  acme:
-  mqtt_broker_data:
+  acme_data:
+    external: true
+  mqtt_data:
+    external: true
   postgres_data:
     external: true
   pgdump_data:
@@ -66,7 +68,7 @@ services:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - ./config/traefik/config.yml:/etc/traefik/static/config.yml:ro
-      - acme:/acme
+      - acme_data:/acme
     command:
       - --api.dashboard=true
       - --api.insecure=true
@@ -100,7 +102,7 @@ services:
     networks:
       - proxy-net
     volumes:
-      - mqtt_broker_data:/data
+      - mqtt_data:/data
     environment:
       - MQTT_WS_PORT=${MQTT_PORT:-1883}
       - MQTT_HOST=0.0.0.0

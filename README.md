@@ -107,7 +107,8 @@ B2_SECRET_ACCESS_KEY=your-b2-secret-key
 
 ```bash
 docker network create proxy-net
-docker volume create acme
+docker volume create acme_data
+docker volume create mqtt_data
 docker volume create postgres_data
 docker volume create pgdump_data
 docker volume create prometheus_data

@@ -151,7 +151,8 @@ docker compose -f docker-compose.yml -f docker-compose.prod.yml \
 
 ```bash
 docker network create proxy-net
-docker volume create acme
+docker volume create acme_data
+docker volume create mqtt_data
 docker volume create postgres_data
 docker volume create pgdump_data
 docker volume create prometheus_data
