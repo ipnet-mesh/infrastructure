@@ -23,7 +23,7 @@ services:
     environment:
       - TRUST_PROXY_HEADER=1
       - DB_URL=postgres://${POSTGRES_LOGTO_USERNAME}:${POSTGRES_LOGTO_PASSWORD}@postgres:5432/logto
-      - PRIVATE_KEY_ROTATION_GRACE_PERIOD=${PRIVATE_KEY_ROTATION_GRACE_PERIOD:-3600}
+      - PRIVATE_KEY_ROTATION_GRACE_PERIOD=${LOGTO_PRIVATE_KEY_ROTATION_GRACE_PERIOD:-3600}
       - ENDPOINT=https://auth.${ROOT_DOMAIN}
       - ADMIN_ENDPOINT=https://id.${ROOT_DOMAIN}
     entrypoint: ["sh", "-c", "npm run cli db seed -- --swe && npm start"]
