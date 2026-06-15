@@ -80,7 +80,7 @@ All services connect to an external `proxy-net` Docker network. Infrastructure s
 cp .env.example .env
 ```
 
-Edit `.env` with your settings:
+The root `.env` is auto-discovered by Compose (the `docker-compose.yml` lives at the repo root), so no `--env-file` flag or shell export is required. Edit `.env` with your settings:
 
 ```env
 ROOT_DOMAIN=example.com
@@ -116,34 +116,27 @@ docker volume create redis_data
 
 ### 3. Start Infrastructure Services
 
+All infrastructure services live in the root `docker-compose.yml` and are selected with `--profile`. Each service has its own profile, and `--profile all` starts everything:
+
 ```bash
-# Start PostgreSQL
-docker compose -f compose/postgres.yml up -d
+# Start individual services
+docker compose --profile traefik up -d
+docker compose --profile postgres up -d
+docker compose --profile mqtt up -d
+docker compose --profile redis up -d
+docker compose --profile monitoring up -d
+docker compose --profile logto up -d        # also starts postgres (depends_on)
+docker compose --profile backup up -d
 
-# Start Traefik reverse proxy
-docker compose -f compose/traefik.yml up -d
-
-# Start shared MQTT broker
-docker compose -f compose/mqtt.yml up -d
-
-# Start volume backup
-docker compose -f compose/backup.yml up -d
-
-# Start monitoring (Prometheus & Alertmanager)
-docker compose -f compose/monitoring.yml up -d
-
-# Start LogTo identity provider
-docker compose -f compose/logto.yml up -d
-
-# Start Redis cache
-docker compose -f compose/redis.yml up -d
+# Start everything
+docker compose --profile all up -d
 ```
 
 ### 4. Verify
 
 - Traefik dashboard: `http://localhost:8080`
-- MQTT broker health: `docker compose -f compose/mqtt.yml logs mqtt`
-- PostgreSQL health: `docker compose -f compose/postgres.yml logs postgres`
+- MQTT broker health: `docker compose --profile mqtt logs mqtt`
+- PostgreSQL health: `docker compose --profile postgres logs postgres`
 
 ## Multi-Instance Setup
 
@@ -281,36 +274,40 @@ These are set in each hub instance's `.env`. See [MeshCore Hub's `.env.example`]
 
 ### Infrastructure
 
+All services are defined in the root `docker-compose.yml` and selected via `--profile` (`traefik`, `mqtt`, `postgres`, `redis`, `monitoring`, `logto`, `backup`, or `all`):
+
 ```bash
 # Start services
-docker compose -f compose/traefik.yml up -d
-docker compose -f compose/mqtt.yml up -d
-docker compose -f compose/postgres.yml up -d
-docker compose -f compose/backup.yml up -d
-docker compose -f compose/monitoring.yml up -d
-docker compose -f compose/logto.yml up -d
-docker compose -f compose/redis.yml up -d
+docker compose --profile traefik up -d
+docker compose --profile mqtt up -d
+docker compose --profile postgres up -d
+docker compose --profile redis up -d
+docker compose --profile monitoring up -d
+docker compose --profile logto up -d
+docker compose --profile backup up -d
+docker compose --profile all up -d            # everything
 
 # Stop services
-docker compose -f compose/traefik.yml down
-docker compose -f compose/mqtt.yml down
-docker compose -f compose/postgres.yml down
-docker compose -f compose/backup.yml down
-docker compose -f compose/monitoring.yml down
-docker compose -f compose/logto.yml down
-docker compose -f compose/redis.yml down
+docker compose --profile traefik down
+docker compose --profile mqtt down
+docker compose --profile postgres down
+docker compose --profile redis down
+docker compose --profile monitoring down
+docker compose --profile logto down
+docker compose --profile backup down
+docker compose --profile all down
 
 # View logs
-docker compose -f compose/traefik.yml logs -f
-docker compose -f compose/mqtt.yml logs -f
-docker compose -f compose/postgres.yml logs -f
-docker compose -f compose/backup.yml logs -f
-docker compose -f compose/monitoring.yml logs -f
-docker compose -f compose/logto.yml logs -f
-docker compose -f compose/redis.yml logs -f
+docker compose --profile traefik logs -f
+docker compose --profile mqtt logs -f
+docker compose --profile postgres logs -f
+docker compose --profile redis logs -f
+docker compose --profile monitoring logs -f
+docker compose --profile logto logs -f
+docker compose --profile backup logs -f
 
 # Trigger a manual backup
-docker compose -f compose/backup.yml exec backup backup
+docker compose --profile backup exec backup backup
 ```
 
 ### Hub Instances
@@ -342,14 +339,7 @@ docker compose -f docker-compose.yml -f docker-compose.prod.yml \
 
 ```
 infrastructure/
-├── compose/
-│   ├── traefik.yml              # Traefik reverse proxy
-│   ├── mqtt.yml                 # Shared MeshCore MQTT broker
-│   ├── postgres.yml             # PostgreSQL database server
-│   ├── monitoring.yml           # Prometheus and Alertmanager
-│   ├── logto.yml                # LogTo identity provider
-│   ├── redis.yml                # Redis shared cache
-│   └── backup.yml               # Volume backup to Backblaze B2
+├── docker-compose.yml            # All infrastructure services (profile-gated)
 ├── config/
 │   └── traefik/
 │       └── config.yml           # Traefik static config (rate limiting)
@@ -373,7 +363,7 @@ infrastructure/
 │       └── alertmanager.yml
 ├── scripts/
 │   └── bootstrap-instance.sh    # Create a new hub instance directory
-├── .env                         # Infrastructure configuration
+├── .env                         # Infrastructure configuration (auto-loaded)
 └── .env.example                 # Template for .env
 ```
 
