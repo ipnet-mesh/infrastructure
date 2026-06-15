@@ -18,9 +18,18 @@ services:
     restart: unless-stopped
     networks:
       - proxy-net
+    labels:
+      # Dump each non-template database (custom compressed format) before archiving.
+      # $$ escapes $ so compose does not interpolate it; it resolves inside the
+      # container's exec environment where POSTGRES_USER is available. The official
+      # postgres image trusts local socket auth, so no password is needed.
+      - docker-volume-backup.archive-pre=/bin/sh -c 'for db in $$(psql -U "$$POSTGRES_USER" -At -c "SELECT datname FROM pg_database WHERE datistemplate = false"); do pg_dump -U "$$POSTGRES_USER" -Fc -f "/backups/$$db.dump" "$$db"; done'
+      # Remove the dumps after they have been copied to B2
+      - docker-volume-backup.copy-post=/bin/sh -c 'rm -f /backups/*.dump'
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ../etc/postgres/init:/docker-entrypoint-initdb.d:ro
+      - pgdump_data:/backups
     environment:
       - POSTGRES_USER=${POSTGRES_USER:-admin}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
@@ -41,4 +50,6 @@ networks:
 
 volumes:
   postgres_data:
+    external: true
+  pgdump_data:
     external: true

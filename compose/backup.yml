@@ -16,10 +16,12 @@ services:
       - BACKUP_RETENTION_DAYS=30
       - BACKUP_FILENAME=backup-%Y-%m-%dT%H-%M-%S.tar.gz
       - BACKUP_PRUNING_PREFIX=backup-
+      # Forward hook (pg_dump) stdout/stderr into the backup container logs
+      - EXEC_FORWARD_OUTPUT=true
     volumes:
       - hub-prod_data:/backup/hub-prod:ro
       - hub-stg_data:/backup/hub-stg:ro
-      - postgres_data:/backup/postgres:ro
+      - pgdump_data:/backup/pgdump:ro
       - prometheus_data:/backup/prometheus:ro
       - /var/run/docker.sock:/var/run/docker.sock:ro
 
@@ -28,7 +30,7 @@ volumes:
     external: true
   hub-stg_data:
     external: true
-  postgres_data:
+  pgdump_data:
     external: true
   prometheus_data:
     external: true

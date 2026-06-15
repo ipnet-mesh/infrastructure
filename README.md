@@ -62,7 +62,7 @@ All services connect to an external `proxy-net` Docker network. Infrastructure s
 - **TLS certificates** — Managed by Traefik via Let's Encrypt with Cloudflare DNS challenge
 - **MQTT broker** — All hub instances connect to the same broker and ingest the same mesh traffic
 - **Content** — `infrastructure/content/` mounted into each hub instance for shared pages and media
-- **Volume backups** — Daily snapshots of `hub-prod_data`, `hub-stg_data`, `postgres_data`, and `prometheus_data` volumes to Backblaze B2 with 30-day retention
+- **Volume backups** — Daily snapshots of `hub-prod_data`, `hub-stg_data`, `pgdump_data` (PostgreSQL logical dumps via `pg_dump`), and `prometheus_data` volumes to Backblaze B2 with 30-day retention
 - **Identity provider** — LogTo provides OIDC authentication for all services at `auth.<domain>` with admin at `id.<domain>`
 
 ## Prerequisites
@@ -109,6 +109,7 @@ B2_SECRET_ACCESS_KEY=your-b2-secret-key
 docker network create proxy-net
 docker volume create acme
 docker volume create postgres_data
+docker volume create pgdump_data
 docker volume create prometheus_data
 docker volume create redis_data
 ```
