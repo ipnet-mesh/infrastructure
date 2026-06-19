@@ -117,10 +117,15 @@ docker volume create redis_data
 
 ### 3. Start Infrastructure Services
 
-All infrastructure services live in the root `docker-compose.yml` and are selected with `--profile`. Each service has its own profile, and `--profile all` starts everything:
+All infrastructure services live in the root `docker-compose.yml` and are selected with `--profile`. Each service has its own profile, and `--profile all` starts everything. To bring up the full stack — Traefik, MQTT broker, PostgreSQL, Redis, Prometheus, Alertmanager, LogTo, and Backup — in one command:
 
 ```bash
-# Start individual services
+docker compose --profile all up -d
+```
+
+Individual services can also be started on their own when needed:
+
+```bash
 docker compose --profile traefik up -d
 docker compose --profile postgres up -d
 docker compose --profile mqtt up -d
@@ -128,9 +133,6 @@ docker compose --profile redis up -d
 docker compose --profile monitoring up -d
 docker compose --profile logto up -d        # also starts postgres (depends_on)
 docker compose --profile backup up -d
-
-# Start everything
-docker compose --profile all up -d
 ```
 
 ### 4. Verify
@@ -279,6 +281,7 @@ All services are defined in the root `docker-compose.yml` and selected via `--pr
 
 ```bash
 # Start services
+docker compose --profile all up -d            # everything: traefik, mqtt, postgres, redis, prometheus, alertmanager, logto, backup
 docker compose --profile traefik up -d
 docker compose --profile mqtt up -d
 docker compose --profile postgres up -d
@@ -286,7 +289,6 @@ docker compose --profile redis up -d
 docker compose --profile monitoring up -d
 docker compose --profile logto up -d
 docker compose --profile backup up -d
-docker compose --profile all up -d            # everything
 
 # Stop services
 docker compose --profile traefik down
