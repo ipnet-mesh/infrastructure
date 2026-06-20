@@ -28,21 +28,15 @@ Hub instances (MeshCore Hub) are deployed as separate independent compose stacks
 
 ## Architecture
 
-All services connect to an external `proxy-net` Docker network. Each stack is started independently.
+All services connect to an external `proxy-net` Docker network. All infrastructure services live in a single root `docker-compose.yml` and are selected with `--profile`; each MeshCore Hub instance is a separate independent compose stack.
 
 ```
 infrastructure/                hub-prod/              hub-stg/
-├── compose/                   ├── docker-compose.*   ├── docker-compose.*
-│   ├── traefik.yml            ├── etc/               ├── etc/
-│   ├── mqtt.yml               └── .env               └── .env
-│   ├── postgres.yml
-│   ├── logto.yml
-│   ├── monitoring.yml
-│   ├── redis.yml
-│   └── backup.yml
-├── config/
-├── content/  ← shared volume
-└── .env
+├── docker-compose.yml         ├── docker-compose.*   ├── docker-compose.*
+├── config/                    ├── etc/               ├── etc/
+├── content/  ← shared volume  └── .env               └── .env
+├── etc/
+└── .env  (auto-loaded)
         │            │                  │
         └────────────┼──────────────────┘
                proxy-net (external)
@@ -107,45 +101,31 @@ infrastructure/                hub-prod/              hub-stg/
 
 ### Infrastructure Services
 
+All infrastructure services live in the root `docker-compose.yml` and are selected with `--profile`. Each service has its own profile (`traefik`, `mqtt`, `postgres`, `redis`, `monitoring`, `logto`, `backup`) and `--profile all` selects every service. The root `.env` is auto-loaded — no `--env-file` flag or shell export required.
+
 ```bash
-# Start PostgreSQL
-docker compose -f compose/postgres.yml up -d
+# Start a service
+docker compose --profile traefik up -d
+docker compose --profile mqtt up -d
+docker compose --profile postgres up -d
+docker compose --profile redis up -d
+docker compose --profile monitoring up -d
+docker compose --profile logto up -d      # also starts postgres (depends_on)
+docker compose --profile backup up -d
+docker compose --profile all up -d        # everything
 
-# Start Traefik
-docker compose -f compose/traefik.yml up -d
-
-# Start MQTT broker
-docker compose -f compose/mqtt.yml up -d
-
-# Start volume backup
-docker compose -f compose/backup.yml up -d
-
-# Start monitoring (Prometheus & Alertmanager)
-docker compose -f compose/monitoring.yml up -d
-
-# Start LogTo identity provider
-docker compose -f compose/logto.yml up -d
-
-# Start Redis cache
-docker compose -f compose/redis.yml up -d
-
-# Stop a service
-docker compose -f compose/postgres.yml down
-docker compose -f compose/traefik.yml down
-docker compose -f compose/mqtt.yml down
-docker compose -f compose/backup.yml down
-docker compose -f compose/monitoring.yml down
-docker compose -f compose/logto.yml down
-docker compose -f compose/redis.yml down
+# Stop a service (or all)
+docker compose --profile traefik down
+docker compose --profile all down
 
 # View logs
-docker compose -f compose/postgres.yml logs -f
-docker compose -f compose/traefik.yml logs -f
-docker compose -f compose/mqtt.yml logs -f
-docker compose -f compose/backup.yml logs -f
-docker compose -f compose/monitoring.yml logs -f
-docker compose -f compose/logto.yml logs -f
-docker compose -f compose/redis.yml logs -f
+docker compose --profile traefik logs -f
+docker compose --profile mqtt logs -f
+docker compose --profile postgres logs -f
+docker compose --profile redis logs -f
+docker compose --profile monitoring logs -f
+docker compose --profile logto logs -f
+docker compose --profile backup logs -f
 ```
 
 ### Hub Instances
@@ -171,7 +151,8 @@ docker compose -f docker-compose.yml -f docker-compose.prod.yml \
 
 ```bash
 docker network create proxy-net
-docker volume create acme
+docker volume create acme_data
+docker volume create mqtt_data
 docker volume create postgres_data
 docker volume create pgdump_data
 docker volume create prometheus_data
@@ -180,7 +161,7 @@ docker volume create redis_data
 
 ## Environment Variables
 
-Copy `.env.example` to `.env` and configure:
+Copy `.env.example` to `.env` and configure. The root `.env` is auto-discovered by Compose (the `docker-compose.yml` lives at the repo root):
 
 ### Infrastructure Variables
 
@@ -228,20 +209,15 @@ Copy `.env.example` to `.env` and configure:
 
 ## Configuration Files
 
-| File                                | Description                           |
-| ----------------------------------- | ------------------------------------- |
-| `compose/traefik.yml`               | Traefik service definition            |
-| `compose/mqtt.yml`                  | MQTT broker service definition        |
-| `compose/postgres.yml`              | PostgreSQL database server            |
-| `compose/monitoring.yml`            | Prometheus and Alertmanager           |
-| `compose/logto.yml`                 | LogTo identity provider               |
-| `compose/redis.yml`                | Redis shared cache service definition  |
-| `compose/backup.yml`                | Volume backup to Backblaze B2         |
-| `config/traefik/config.yml`         | Traefik static config (rate limiting) |
-| `etc/prometheus/prometheus.yml`     | Prometheus scrape and alerting config |
-| `etc/prometheus/rules/meshcore.yml` | Prometheus alert rules                |
-| `etc/alertmanager/alertmanager.yml` | Alertmanager Discord routing config   |
-| `scripts/bootstrap-instance.sh`     | Create a new hub instance directory   |
+| File                                | Description                                                     |
+| ----------------------------------- | --------------------------------------------------------------- |
+| `docker-compose.yml`                | All infrastructure services (profile-gated, root of repo)       |
+| `config/traefik/config.yml`         | Traefik static config (rate limiting)                          |
+| `etc/prometheus/prometheus.yml`     | Prometheus scrape and alerting config                          |
+| `etc/prometheus/rules/meshcore.yml` | Prometheus alert rules                                         |
+| `etc/alertmanager/alertmanager.yml` | Alertmanager Discord routing config                            |
+| `etc/postgres/init/`                | PostgreSQL init SQL scripts (run on first start)               |
+| `scripts/bootstrap-instance.sh`     | Create a new hub instance directory                            |
 
 ## Security Notes
 
