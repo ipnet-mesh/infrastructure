@@ -47,12 +47,12 @@ set loop.detect minimal
 ### Flooding (v1.16+)
 
 Repeater firmware from **v1.16 onwards** introduced options for managing flood
-hop limits for messages (scoped and unscoped) and advertisements:
+hop limits for messages (scoped and unscoped) and advertisements. We recommend keeping these as default for now:
 
 ```
-set flood.max 10
-set flood.max.unscoped 6
-set flood.max.advert 10
+set flood.max 64
+set flood.max.unscoped 64
+set flood.max.advert 8
 ```
 
 ## Becoming an Operator
